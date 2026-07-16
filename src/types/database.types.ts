@@ -1,0 +1,142 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          billing_cycle: string
+          cancellation_mode: string | null
+          category_id: string
+          created_at: string
+          description: string | null
+          earliest_cancellation_date: string | null
+          id: string
+          min_term_months: number | null
+          name: string
+          notice_period: string | null
+          start_date: string | null
+          updated_at: string
+          user_id: string
+          yearly_cost: number | null
+        }
+        Insert: {
+          amount: number
+          billing_cycle: string
+          cancellation_mode?: string | null
+          category_id: string
+          created_at?: string
+          description?: string | null
+          earliest_cancellation_date?: string | null
+          id?: string
+          min_term_months?: number | null
+          name: string
+          notice_period?: string | null
+          start_date?: string | null
+          updated_at?: string
+          user_id: string
+          yearly_cost?: number | null
+        }
+        Update: {
+          amount?: number
+          billing_cycle?: string
+          cancellation_mode?: string | null
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          earliest_cancellation_date?: string | null
+          id?: string
+          min_term_months?: number | null
+          name?: string
+          notice_period?: string | null
+          start_date?: string | null
+          updated_at?: string
+          user_id?: string
+          yearly_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      resolve_login_email: { Args: { identifier: string }; Returns: string }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DefaultSchema = Database["public"]
+
+export type Tables<T extends keyof DefaultSchema["Tables"]> =
+  DefaultSchema["Tables"][T]["Row"]
+export type TablesInsert<T extends keyof DefaultSchema["Tables"]> =
+  DefaultSchema["Tables"][T]["Insert"]
+export type TablesUpdate<T extends keyof DefaultSchema["Tables"]> =
+  DefaultSchema["Tables"][T]["Update"]
