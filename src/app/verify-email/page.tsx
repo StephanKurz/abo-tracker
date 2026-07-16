@@ -61,7 +61,7 @@ function VerifyEmailForm() {
       <div className={`${cardClass} w-full max-w-md`}>
         <h1 className="mb-2 text-2xl font-bold text-gray-900">E-Mail bestätigen</h1>
         <p className="mb-6 text-sm text-gray-600">
-          Wir haben einen sechsstelligen Code an <strong>{email || "deine E-Mail-Adresse"}</strong> gesendet.
+          Wir haben einen Bestätigungscode an <strong>{email || "deine E-Mail-Adresse"}</strong> gesendet.
           Bitte gib ihn hier ein, um deinen Account freizuschalten.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -73,8 +73,8 @@ function VerifyEmailForm() {
               id="code"
               type="text"
               inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
+              pattern="[0-9]*"
+              maxLength={10}
               required
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
@@ -87,7 +87,7 @@ function VerifyEmailForm() {
 
           <button
             type="submit"
-            disabled={loading || code.length !== 6}
+            disabled={loading || code.length < 6}
             className={`${buttonPrimaryClass} w-full`}
           >
             {loading ? "Wird geprüft…" : "Account freischalten"}
