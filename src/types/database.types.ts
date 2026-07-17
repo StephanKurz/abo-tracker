@@ -12,6 +12,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_ratings: {
+        Row: {
+          created_at: string
+          is_positive: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          is_positive: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          is_positive?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -38,19 +59,28 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          last_notified_subscription_id: string | null
+          last_notified_target_date: string | null
           name: string
+          notify_days_before: number | null
         }
         Insert: {
           created_at?: string
           email: string
           id: string
+          last_notified_subscription_id?: string | null
+          last_notified_target_date?: string | null
           name: string
+          notify_days_before?: number | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          last_notified_subscription_id?: string | null
+          last_notified_target_date?: string | null
           name?: string
+          notify_days_before?: number | null
         }
         Relationships: []
       }
@@ -125,6 +155,10 @@ export type Database = {
     }
     Functions: {
       resolve_login_email: { Args: { identifier: string }; Returns: string }
+      get_rating_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: { positive_count: number; total_users: number }[]
+      }
     }
     Enums: {
       [_ in never]: never

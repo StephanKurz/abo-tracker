@@ -1,13 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { updateProfileName } from "@/app/actions/profile";
+import { updateProfileName, updateNotificationSettings } from "@/app/actions/profile";
+import { submitRating } from "@/app/actions/rating";
 import { FieldLabel } from "@/components/ui/FieldLabel";
-import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
+import { inputClass, buttonPrimaryClass, buttonSecondaryClass, cardClass } from "@/components/ui/formStyles";
 import { PASSWORD_RULES, isPasswordValid } from "@/lib/validation";
 
-export function AccountForm({ name, email }: { name: string; email: string }) {
+export function AccountForm({
+  name,
+  email,
+  notifyDaysBefore,
+  rating,
+}: {
+  name: string;
+  email: string;
+  notifyDaysBefore: number | null;
+  rating: boolean | null;
+}) {
+  const router = useRouter();
   const [nameValue, setNameValue] = useState(name);
   const [nameError, setNameError] = useState<string | null>(null);
   const [nameInfo, setNameInfo] = useState<string | null>(null);
@@ -18,6 +31,16 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwInfo, setPwInfo] = useState<string | null>(null);
   const [pwLoading, setPwLoading] = useState(false);
+
+  const [notifyDays, setNotifyDays] = useState(
+    notifyDaysBefore != null ? String(notifyDaysBefore) : "",
+  );
+  const [notifyError, setNotifyError] = useState<string | null>(null);
+  const [notifyInfo, setNotifyInfo] = useState<string | null>(null);
+  const [notifyLoading, setNotifyLoading] = useState(false);
+
+  const [ratingValue, setRatingValue] = useState(rating);
+  const [ratingLoading, setRatingLoading] = useState(false);
 
   async function handleNameSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -63,6 +86,29 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
     setPwInfo("Passwort erfolgreich geändert.");
     setNewPassword("");
     setNewPasswordConfirm("");
+  }
+
+  async function handleNotifySubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setNotifyError(null);
+    setNotifyInfo(null);
+    setNotifyLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const result = await updateNotificationSettings(formData);
+    setNotifyLoading(false);
+    if (result.error) {
+      setNotifyError(result.error);
+    } else {
+      setNotifyInfo("Benachrichtigungseinstellung gespeichert.");
+    }
+  }
+
+  async function handleRate(isPositive: boolean) {
+    setRatingLoading(true);
+    await submitRating(isPositive);
+    setRatingLoading(false);
+    setRatingValue(isPositive);
+    router.refresh();
   }
 
   return (
@@ -146,6 +192,72 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
           {pwLoading ? "Wird geändert…" : "Passwort ändern"}
         </button>
       </form>
+
+      <form onSubmit={handleNotifySubmit} className={`${cardClass} space-y-4`}>
+        <h2 className="text-lg font-semibold text-gray-900">Benachrichtigungen</h2>
+        <p className="text-sm text-gray-600">
+          Wir ermitteln automatisch das nächstgelegene Kündigungsdatum unter all deinen Abos und
+          erinnern dich per E-Mail rechtzeitig vorher. Leer lassen, um keine Erinnerung zu erhalten.
+        </p>
+
+        <div>
+          <FieldLabel htmlFor="notify_days_before">Tage vor nächstem Kündigungsdatum</FieldLabel>
+          <input
+            id="notify_days_before"
+            name="notify_days_before"
+            type="number"
+            min={0}
+            value={notifyDays}
+            onChange={(e) => setNotifyDays(e.target.value.replace(/[^0-9]/g, ""))}
+            className={inputClass}
+          />
+        </div>
+
+        {notifyError && <p className="text-sm text-red-600">{notifyError}</p>}
+        {notifyInfo && <p className="text-sm text-green-700">{notifyInfo}</p>}
+
+        <button type="submit" disabled={notifyLoading} className={buttonPrimaryClass}>
+          {notifyLoading ? "Wird gespeichert…" : "Speichern"}
+        </button>
+      </form>
+
+      <div className={`${cardClass} space-y-4`}>
+        <h2 className="text-lg font-semibold text-gray-900">Deine Bewertung</h2>
+        <p className="text-sm text-gray-600">
+          {ratingValue == null
+            ? "Du hast den Abo-Tracker noch nicht bewertet."
+            : ratingValue
+              ? "Du hast den Abo-Tracker als „Super Tool” bewertet."
+              : "Du hast den Abo-Tracker als „taugt nix” bewertet."}
+        </p>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            disabled={ratingLoading}
+            onClick={() => handleRate(true)}
+            className={
+              ratingValue === true
+                ? `${buttonPrimaryClass} gap-2`
+                : `${buttonSecondaryClass} gap-2`
+            }
+          >
+            <span className="text-yellow-400">★</span> Super Tool
+          </button>
+          <button
+            type="button"
+            disabled={ratingLoading}
+            onClick={() => handleRate(false)}
+            className={
+              ratingValue === false
+                ? `${buttonPrimaryClass} gap-2`
+                : `${buttonSecondaryClass} gap-2`
+            }
+          >
+            <span className="text-gray-400">★</span> Taugt nix
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -156,6 +156,19 @@ export function isFullyExpired(
   return effectiveEnd != null && effectiveEnd.getTime() < today.getTime();
 }
 
+/**
+ * Parses a German-formatted amount ("1.234,56") into a plain number.
+ * `<input type="number">` always shows/accepts a decimal point regardless
+ * of locale, so the amount field uses a text input with this parser instead.
+ */
+export function parseGermanAmount(value: string): number {
+  return Number(value.replace(/\./g, "").replace(",", "."));
+}
+
+export function formatAmountInput(value: number): string {
+  return value.toFixed(2).replace(".", ",");
+}
+
 export function computeYearlyCost(amount: number, billingCycle: string): number {
   return billingCycle === "yearly" ? amount : amount * 12;
 }

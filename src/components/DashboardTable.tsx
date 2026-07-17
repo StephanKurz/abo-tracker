@@ -12,17 +12,46 @@ import {
 import type { Subscription } from "@/lib/subscriptions";
 
 type Row = Subscription & { category_name: string };
+type SortColumn = "startDate" | "nextCancellation";
 
 export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
+  const [sortColumn, setSortColumn] = useState<SortColumn>("nextCancellation");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const nextCancellationById = useMemo(() => {
+    const map = new Map<string, Date | null>();
+    for (const sub of subscriptions) {
+      map.set(sub.id, getEffectiveCancellationDate(sub));
+    }
+    return map;
+  }, [subscriptions]);
+
+  function toggleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDir("asc");
+    }
+  }
 
   const sorted = useMemo(() => {
     return [...subscriptions].sort((a, b) => {
-      const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
-      const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
+      const da =
+        sortColumn === "startDate"
+          ? a.start_date
+            ? new Date(a.start_date).getTime()
+            : Infinity
+          : (nextCancellationById.get(a.id)?.getTime() ?? Infinity);
+      const db =
+        sortColumn === "startDate"
+          ? b.start_date
+            ? new Date(b.start_date).getTime()
+            : Infinity
+          : (nextCancellationById.get(b.id)?.getTime() ?? Infinity);
       return sortDir === "asc" ? da - db : db - da;
     });
-  }, [subscriptions, sortDir]);
+  }, [subscriptions, sortColumn, sortDir, nextCancellationById]);
 
   const active = subscriptions.filter((s) => !isFullyExpired(s));
   const totalYearly = active.reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
@@ -34,32 +63,43 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-6 rounded-lg bg-white p-4 shadow-md">
-        <div>
-          <p className="text-xs text-gray-500">Gesamtsumme pro Jahr</p>
-          <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearly)}</p>
+      <div className="flex flex-wrap gap-4">
+        <div className="flex flex-1 flex-wrap gap-6 rounded-lg bg-white p-4 shadow-md">
+          <h2 className="w-full text-sm font-semibold text-gray-700">Alle Abos</h2>
+          <div>
+            <p className="text-xs text-gray-500">Gesamtsumme pro Jahr</p>
+            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearly)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Gesamtsumme pro Monat</p>
+            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthly)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Anzahl Abos</p>
+            <p className="text-xl font-bold text-gray-900">{subscriptions.length}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs text-gray-500">Gesamtsumme pro Monat</p>
-          <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthly)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Gesamtsumme pro Jahr (ungekündigt)</p>
-          <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearlyUncanceled)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Gesamtsumme pro Monat (ungekündigt)</p>
-          <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthlyUncanceled)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Anzahl Abos</p>
-          <p className="text-xl font-bold text-gray-900">{subscriptions.length}</p>
+
+        <div className="flex flex-1 flex-wrap gap-6 rounded-lg bg-white p-4 shadow-md">
+          <h2 className="w-full text-sm font-semibold text-gray-700">Ungekündigte Abos</h2>
+          <div>
+            <p className="text-xs text-gray-500">Gesamtsumme pro Jahr</p>
+            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearlyUncanceled)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Gesamtsumme pro Monat</p>
+            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthlyUncanceled)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Anzahl Abos</p>
+            <p className="text-xl font-bold text-gray-900">{activeUncanceled.length}</p>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg bg-white shadow-md">
+      <div className="max-h-[55vh] overflow-auto rounded-lg bg-white shadow-md">
         <table className="w-full min-w-[960px] text-left text-sm">
-          <thead className="border-b border-gray-200 text-gray-600">
+          <thead className="sticky top-0 z-10 border-b border-gray-200 bg-white text-gray-600">
             <tr>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Name</th>
@@ -69,19 +109,27 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
               <th className="px-4 py-3">Jahreskosten</th>
               <th className="px-4 py-3">
                 <button
-                  onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
+                  onClick={() => toggleSort("startDate")}
                   className="flex items-center gap-1 font-medium hover:text-orange-600"
                 >
-                  Abschlussdatum {sortDir === "asc" ? "▲" : "▼"}
+                  Abschlussdatum {sortColumn === "startDate" && (sortDir === "asc" ? "▲" : "▼")}
                 </button>
               </th>
-              <th className="px-4 py-3">Nächstes Kündigungsdatum</th>
+              <th className="px-4 py-3">
+                <button
+                  onClick={() => toggleSort("nextCancellation")}
+                  className="flex items-center gap-1 font-medium hover:text-orange-600"
+                >
+                  Nächstes Kündigungsdatum{" "}
+                  {sortColumn === "nextCancellation" && (sortDir === "asc" ? "▲" : "▼")}
+                </button>
+              </th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {sorted.map((sub) => {
-              const nextCancellation = getEffectiveCancellationDate(sub);
+              const nextCancellation = nextCancellationById.get(sub.id) ?? null;
               return (
                 <tr key={sub.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-center">

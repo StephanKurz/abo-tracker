@@ -4,15 +4,23 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FieldLabel } from "@/components/ui/FieldLabel";
-import { inputClass, buttonPrimaryClass, buttonSecondaryClass, cardClass } from "@/components/ui/formStyles";
+import {
+  inputClass,
+  textareaClass,
+  buttonPrimaryClass,
+  buttonSecondaryClass,
+  cardClass,
+} from "@/components/ui/formStyles";
 import {
   BILLING_CYCLE_LABELS,
   CANCELLATION_MODE_LABELS,
   NOTICE_PERIOD_LABELS,
   computeNextCancellationDate,
   computeYearlyCost,
+  formatAmountInput,
   formatCurrency,
   formatDate,
+  parseGermanAmount,
 } from "@/lib/subscriptions";
 import type { Category, Subscription } from "@/lib/subscriptions";
 
@@ -35,7 +43,9 @@ export function SubscriptionForm({
   const [minTermMonths, setMinTermMonths] = useState(
     initial?.min_term_months != null ? String(initial.min_term_months) : "",
   );
-  const [amount, setAmount] = useState(initial?.amount != null ? String(initial.amount) : "");
+  const [amount, setAmount] = useState(
+    initial?.amount != null ? formatAmountInput(initial.amount) : "",
+  );
   const [cancellationMode, setCancellationMode] = useState(initial?.cancellation_mode ?? "");
   const [noticePeriod, setNoticePeriod] = useState(initial?.notice_period ?? "");
   const [canceledAt, setCanceledAt] = useState(initial?.canceled_at ?? "");
@@ -43,7 +53,7 @@ export function SubscriptionForm({
   const [loading, setLoading] = useState(false);
 
   const yearlyCost = useMemo(() => {
-    const n = Number(amount);
+    const n = parseGermanAmount(amount);
     if (!amount || Number.isNaN(n)) return null;
     return computeYearlyCost(n, billingCycle);
   }, [amount, billingCycle]);
@@ -108,7 +118,7 @@ export function SubscriptionForm({
           name="description"
           rows={3}
           defaultValue={initial?.description ?? ""}
-          className={inputClass}
+          className={textareaClass}
         />
       </div>
 
@@ -173,12 +183,18 @@ export function SubscriptionForm({
           <input
             id="amount"
             name="amount"
-            type="number"
-            min={0}
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             required
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) =>
+              setAmount(e.target.value.replace(/[^0-9,]/g, "").replace(/(,.*),/g, "$1"))
+            }
+            onBlur={() => {
+              const n = parseGermanAmount(amount);
+              if (amount && !Number.isNaN(n)) setAmount(formatAmountInput(n));
+            }}
+            placeholder="0,00"
             className={inputClass}
           />
         </div>

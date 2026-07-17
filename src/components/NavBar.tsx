@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { RatingStar } from "@/components/RatingStar";
 
 const LINKS = [
   { href: "/dashboard", label: "Übersicht" },
@@ -12,7 +13,15 @@ const LINKS = [
   { href: "/account", label: "Mein Konto" },
 ];
 
-export function NavBar({ name }: { name: string }) {
+export function NavBar({
+  name,
+  ratingPercentage,
+  hasRated,
+}: {
+  name: string;
+  ratingPercentage: number;
+  hasRated: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -27,7 +36,10 @@ export function NavBar({ name }: { name: string }) {
     <header className="no-print border-b border-gray-300 bg-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-lg font-bold text-gray-900">Abo-Tracker</span>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-gray-900">Abo-Tracker</span>
+            <RatingStar percentage={ratingPercentage} hasRated={hasRated} />
+          </div>
           <div className="flex items-center gap-3 text-sm text-gray-700 sm:hidden">
             <span className="truncate">{name}</span>
             <button

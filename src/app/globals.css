@@ -29,10 +29,23 @@ body {
 }
 
 @media print {
+  @page {
+    margin: 16mm 12mm;
+  }
+
+  html,
   body {
     background: #ffffff;
+    margin: 0;
+    height: auto;
+    overflow: visible;
   }
+
   .no-print {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
   }
 }

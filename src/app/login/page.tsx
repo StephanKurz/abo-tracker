@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { isEmail } from "@/lib/validation";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -55,7 +56,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen flex-col">
+      <main className="flex flex-1 items-center justify-center p-4">
       <div className={`${cardClass} w-full max-w-md`}>
         <h1 className="mb-6 text-2xl font-bold text-gray-900">Anmelden</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -102,12 +104,9 @@ export default function LoginPage() {
             Passwort vergessen?
           </Link>
         </div>
-        <p className="mt-3 text-center text-xs text-gray-500">
-          <Link href="/datenschutz" className="hover:underline">
-            Datenschutzhinweise
-          </Link>
-        </p>
       </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -31,7 +32,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen flex-col">
+      <main className="flex flex-1 items-center justify-center p-4">
       <div className={`${cardClass} w-full max-w-md`}>
         <h1 className="mb-2 text-2xl font-bold text-gray-900">Passwort vergessen</h1>
         <p className="mb-6 text-sm text-gray-600">
@@ -72,6 +74,8 @@ export default function ForgotPasswordPage() {
           </Link>
         </p>
       </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

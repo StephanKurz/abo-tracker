@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { parseGermanAmount } from "@/lib/subscriptions";
 import type { TablesInsert } from "@/types/database.types";
 
 function parseSubscriptionForm(formData: FormData) {
@@ -17,10 +18,12 @@ function parseSubscriptionForm(formData: FormData) {
   const notice_period = String(formData.get("notice_period") ?? "").trim();
   const canceled_at = String(formData.get("canceled_at") ?? "").trim();
 
+  const parsedAmount = parseGermanAmount(amount);
+
   const errors: string[] = [];
   if (!name) errors.push("Name ist ein Pflichtfeld.");
   if (!["monthly", "yearly"].includes(billing_cycle)) errors.push("Abrechnung ist ein Pflichtfeld.");
-  if (!amount || Number.isNaN(Number(amount)) || Number(amount) < 0) {
+  if (!amount || Number.isNaN(parsedAmount) || parsedAmount < 0) {
     errors.push("Betrag pro Abrechnungseinheit ist ein Pflichtfeld.");
   }
   if (!category_id) errors.push("Kategorie ist ein Pflichtfeld.");
@@ -31,7 +34,7 @@ function parseSubscriptionForm(formData: FormData) {
     start_date: start_date || null,
     billing_cycle,
     min_term_months: min_term_months ? Number(min_term_months) : null,
-    amount: Number(amount || 0),
+    amount: Number.isNaN(parsedAmount) ? 0 : parsedAmount,
     category_id,
     cancellation_mode: cancellation_mode || null,
     notice_period: notice_period || null,

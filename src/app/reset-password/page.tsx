@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { PASSWORD_RULES, isPasswordValid } from "@/lib/validation";
+import { SiteFooter } from "@/components/SiteFooter";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -57,7 +58,8 @@ function ResetPasswordForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen flex-col">
+      <main className="flex flex-1 items-center justify-center p-4">
       <div className={`${cardClass} w-full max-w-md`}>
         <h1 className="mb-6 text-2xl font-bold text-gray-900">Neues Passwort festlegen</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,7 +114,9 @@ function ResetPasswordForm() {
           </button>
         </form>
       </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }
 
