@@ -19,6 +19,7 @@ export const NOTICE_PERIOD_LABELS: Record<string, string> = {
   "3_months": "3 Monate",
   end_of_year: "3 Monate zum Jahresende",
   anytime: "jederzeit",
+  yearly: "jährlich",
 };
 
 function addMonths(date: Date, months: number): Date {
@@ -58,6 +59,10 @@ function nextCycleAnchor(start: Date, mode: string, today: Date): Date {
  *   dieser Tag noch nicht erreicht ist) oder im Folgemonat (falls er schon
  *   erreicht/vorbei ist) — z. B. Abschlusstag 19., heute 17.: kündbar bis
  *   18. des laufenden Monats; ab dem 19. dann bis 18. des Folgemonats.
+ *   Bei "jährlich" läuft der Vertrag immer ein volles Jahr ab dem
+ *   Abschlussdatum und endet zum Tag vor dem nächsten Jahrestag — z. B.
+ *   Abschlussdatum 12.5.2022, heute 17.7.2026: der 11.5.2026 ist bereits
+ *   vorbei, also kündbar bis 11.5.2027.
  * Diese Formel ist aus einer mehrdeutigen fachlichen Vorgabe abgeleitet
  * und mit dem Auftraggeber als "zwei unabhängige Felder" abgestimmt.
  */
@@ -97,6 +102,15 @@ export function computeNextCancellationDate(
       today.getTime() < candidate.getTime()
         ? candidate
         : new Date(today.getFullYear(), today.getMonth() + 1, day);
+    return new Date(target.getFullYear(), target.getMonth(), target.getDate() - 1);
+  }
+
+  if (sub.notice_period === "yearly") {
+    const candidate = new Date(today.getFullYear(), start.getMonth(), start.getDate());
+    const target =
+      today.getTime() < candidate.getTime()
+        ? candidate
+        : new Date(today.getFullYear() + 1, start.getMonth(), start.getDate());
     return new Date(target.getFullYear(), target.getMonth(), target.getDate() - 1);
   }
 
