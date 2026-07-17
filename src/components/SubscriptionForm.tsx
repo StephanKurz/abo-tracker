@@ -123,7 +123,7 @@ export function SubscriptionForm({
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <FieldLabel htmlFor="start_date">Abschlussdatum</FieldLabel>
           <input
             id="start_date"
@@ -135,7 +135,7 @@ export function SubscriptionForm({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel required htmlFor="billing_cycle">
             Abrechnung
           </FieldLabel>
@@ -152,7 +152,7 @@ export function SubscriptionForm({
           </select>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel htmlFor="min_term_months">Mindestlaufzeit (Monate)</FieldLabel>
           <input
             id="min_term_months"
@@ -165,7 +165,7 @@ export function SubscriptionForm({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel>Frühestes Kündigungsdatum</FieldLabel>
           <input
             type="text"
@@ -176,7 +176,7 @@ export function SubscriptionForm({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel required htmlFor="amount">
             Betrag pro Abrechnungseinheit (€)
           </FieldLabel>
@@ -199,7 +199,7 @@ export function SubscriptionForm({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel>Jahreskosten</FieldLabel>
           <input
             type="text"
@@ -210,7 +210,7 @@ export function SubscriptionForm({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel required htmlFor="category_id">
             Kategorie
           </FieldLabel>
@@ -240,7 +240,7 @@ export function SubscriptionForm({
           )}
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel htmlFor="cancellation_mode">Kündigungsmodus</FieldLabel>
           <select
             id="cancellation_mode"
@@ -258,7 +258,7 @@ export function SubscriptionForm({
           </select>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel htmlFor="notice_period">Kündigungsfrist</FieldLabel>
           <select
             id="notice_period"
@@ -276,7 +276,7 @@ export function SubscriptionForm({
           </select>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel htmlFor="canceled_at">Gekündigt am</FieldLabel>
           <input
             id="canceled_at"
@@ -288,7 +288,7 @@ export function SubscriptionForm({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel>
             {canceledAt ? "Vertragsende" : "Nächstes Kündigungsdatum"}
           </FieldLabel>

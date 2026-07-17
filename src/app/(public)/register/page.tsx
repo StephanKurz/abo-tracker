@@ -1,34 +1,21 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { PASSWORD_RULES, isPasswordValid } from "@/lib/validation";
-import { SiteFooter } from "@/components/SiteFooter";
 
-function ResetPasswordForm() {
+export default function RegisterPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(() => !searchParams.get("code"));
-
-  useEffect(() => {
-    const code = searchParams.get("code");
-    if (!code) return;
-
-    const supabase = createClient();
-    supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
-      if (exchangeError) {
-        setError("Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Reset-Link an.");
-      }
-      setReady(true);
-    });
-  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,32 +33,61 @@ function ResetPasswordForm() {
 
     setLoading(true);
     const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
     setLoading(false);
 
-    if (updateError) {
-      setError(updateError.message);
+    if (signUpError) {
+      setError(signUpError.message);
       return;
     }
 
-    router.push("/dashboard");
+    router.push(`/verify-email?email=${encodeURIComponent(email)}`);
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex flex-1 items-center justify-center p-4">
       <div className={`${cardClass} w-full max-w-md`}>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Neues Passwort festlegen</h1>
+        <h1 className="mb-6 text-2xl font-bold text-gray-900">Registrieren</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <FieldLabel required htmlFor="name">
+              Name
+            </FieldLabel>
+            <input
+              id="name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <FieldLabel required htmlFor="email">
+              E-Mail-Adresse
+            </FieldLabel>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
             <FieldLabel required htmlFor="password">
-              Neues Passwort
+              Passwort
             </FieldLabel>
             <input
               id="password"
               type="password"
               required
-              disabled={!ready}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}
@@ -80,7 +96,10 @@ function ResetPasswordForm() {
               {PASSWORD_RULES.map((rule) => {
                 const ok = rule.test(password);
                 return (
-                  <li key={rule.id} className={ok ? "text-green-700" : "text-gray-500"}>
+                  <li
+                    key={rule.id}
+                    className={ok ? "text-green-700" : "text-gray-500"}
+                  >
                     {ok ? "✓" : "○"} {rule.label}
                   </li>
                 );
@@ -90,13 +109,12 @@ function ResetPasswordForm() {
 
           <div>
             <FieldLabel required htmlFor="password_confirm">
-              Neues Passwort bestätigen
+              Passwort bestätigen
             </FieldLabel>
             <input
               id="password_confirm"
               type="password"
               required
-              disabled={!ready}
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}
               className={inputClass}
@@ -105,25 +123,17 @@ function ResetPasswordForm() {
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading || !ready}
-            className={`${buttonPrimaryClass} w-full`}
-          >
-            {loading ? "Wird gespeichert…" : "Passwort speichern"}
+          <button type="submit" disabled={loading} className={`${buttonPrimaryClass} w-full`}>
+            {loading ? "Wird gesendet…" : "Registrieren"}
           </button>
         </form>
-      </div>
-      </main>
-      <SiteFooter />
-    </div>
-  );
-}
 
-export default function ResetPasswordPage() {
-  return (
-    <Suspense>
-      <ResetPasswordForm />
-    </Suspense>
+        <p className="mt-4 text-sm text-gray-600">
+          Bereits registriert?{" "}
+          <Link href="/login" className="text-orange-600 hover:underline">
+            Anmelden
+          </Link>
+        </p>
+      </div>
   );
 }

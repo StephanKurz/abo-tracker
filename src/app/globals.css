@@ -30,15 +30,17 @@ body {
 
 @media print {
   @page {
-    margin: 16mm 12mm;
+    margin: 10mm;
   }
 
   html,
   body {
     background: #ffffff;
     margin: 0;
+    padding: 0;
     height: auto;
     overflow: visible;
+    font-size: 11px;
   }
 
   .no-print {

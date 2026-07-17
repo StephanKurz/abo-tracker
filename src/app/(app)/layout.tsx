@@ -29,13 +29,15 @@ export default async function AppLayout({
       : 0;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden print:h-auto print:overflow-visible">
       <NavBar
         name={profile?.name ?? user.email ?? ""}
         ratingPercentage={ratingPercentage}
         hasRated={ownRating != null}
       />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-4 py-6 print:overflow-visible">
+        {children}
+      </main>
       <SiteFooter />
     </div>
   );
