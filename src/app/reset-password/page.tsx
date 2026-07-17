@@ -1,17 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { PASSWORD_RULES, isPasswordValid } from "@/lib/validation";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const supabase = createClient();
+
+    if (!code) {
+      setReady(true);
+      return;
+    }
+
+    supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
+      if (exchangeError) {
+        setError("Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Reset-Link an.");
+      }
+      setReady(true);
+    });
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,6 +67,7 @@ export default function ResetPasswordPage() {
               id="password"
               type="password"
               required
+              disabled={!ready}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}
@@ -66,11 +86,23 @@ export default function ResetPasswordPage() {
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button type="submit" disabled={loading} className={`${buttonPrimaryClass} w-full`}>
+          <button
+            type="submit"
+            disabled={loading || !ready}
+            className={`${buttonPrimaryClass} w-full`}
+          >
             {loading ? "Wird gespeichert…" : "Passwort speichern"}
           </button>
         </form>
       </div>
     </main>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
