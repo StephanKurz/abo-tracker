@@ -1,12 +1,14 @@
 "use client";
 
-import { BILLING_CYCLE_LABELS, formatCurrency, formatDate } from "@/lib/subscriptions";
+import { BILLING_CYCLE_LABELS, formatCurrency, formatDate, isFullyExpired } from "@/lib/subscriptions";
 import { buttonPrimaryClass } from "@/components/ui/formStyles";
 import type { Subscription } from "@/lib/subscriptions";
 
 type Row = Subscription & { category_name: string };
 
 export function PrintView({ subscriptions }: { subscriptions: Row[] }) {
+  const active = subscriptions.filter((s) => !isFullyExpired(s));
+
   const groups = new Map<string, Row[]>();
   for (const sub of subscriptions) {
     const key = sub.category_name;
@@ -14,7 +16,10 @@ export function PrintView({ subscriptions }: { subscriptions: Row[] }) {
     groups.get(key)!.push(sub);
   }
   const categoryNames = [...groups.keys()].sort((a, b) => a.localeCompare(b, "de"));
-  const grandTotal = subscriptions.reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
+  const grandTotal = active.reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
+  const grandTotalUncanceled = active
+    .filter((s) => !s.canceled_at)
+    .reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -34,7 +39,9 @@ export function PrintView({ subscriptions }: { subscriptions: Row[] }) {
 
         {categoryNames.map((categoryName) => {
           const rows = groups.get(categoryName)!;
-          const subtotal = rows.reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
+          const subtotal = rows
+            .filter((s) => !isFullyExpired(s))
+            .reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
           return (
             <div key={categoryName} className="break-inside-avoid">
               <h3 className="mb-2 border-b border-gray-300 pb-1 text-lg font-semibold text-gray-900">
@@ -43,6 +50,7 @@ export function PrintView({ subscriptions }: { subscriptions: Row[] }) {
               <table className="w-full text-left text-sm">
                 <thead className="text-gray-600">
                   <tr>
+                    <th className="py-1 pr-2">Status</th>
                     <th className="py-1 pr-2">Name</th>
                     <th className="py-1 pr-2">Abrechnung</th>
                     <th className="py-1 pr-2">Betrag</th>
@@ -53,6 +61,17 @@ export function PrintView({ subscriptions }: { subscriptions: Row[] }) {
                 <tbody>
                   {rows.map((sub) => (
                     <tr key={sub.id} className="border-t border-gray-100">
+                      <td className="py-1 pr-2">
+                        {sub.canceled_at ? (
+                          <span title="Gekündigt" aria-label="Gekündigt" className="text-red-600">
+                            ✗
+                          </span>
+                        ) : (
+                          <span title="Nicht gekündigt" aria-label="Nicht gekündigt" className="text-green-600">
+                            ✓
+                          </span>
+                        )}
+                      </td>
                       <td className="py-1 pr-2">{sub.name}</td>
                       <td className="py-1 pr-2">
                         {BILLING_CYCLE_LABELS[sub.billing_cycle] ?? sub.billing_cycle}
@@ -71,9 +90,14 @@ export function PrintView({ subscriptions }: { subscriptions: Row[] }) {
           );
         })}
 
-        <p className="border-t border-gray-300 pt-3 text-right text-lg font-bold text-gray-900">
-          Gesamtsumme: {formatCurrency(grandTotal)} / Jahr
-        </p>
+        <div className="border-t border-gray-300 pt-3 text-right">
+          <p className="text-lg font-bold text-gray-900">
+            Gesamtsumme: {formatCurrency(grandTotal)} / Jahr
+          </p>
+          <p className="text-sm font-semibold text-gray-700">
+            Gesamtsumme ungekündigt: {formatCurrency(grandTotalUncanceled)} / Jahr
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -38,6 +38,7 @@ export function SubscriptionForm({
   const [amount, setAmount] = useState(initial?.amount != null ? String(initial.amount) : "");
   const [cancellationMode, setCancellationMode] = useState(initial?.cancellation_mode ?? "");
   const [noticePeriod, setNoticePeriod] = useState(initial?.notice_period ?? "");
+  const [canceledAt, setCanceledAt] = useState(initial?.canceled_at ?? "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -56,13 +57,16 @@ export function SubscriptionForm({
   }, [startDate, minTermMonths]);
 
   const nextCancellation = useMemo(() => {
-    return computeNextCancellationDate({
-      start_date: startDate || null,
-      min_term_months: minTermMonths ? Number(minTermMonths) : null,
-      cancellation_mode: cancellationMode || null,
-      notice_period: noticePeriod || null,
-    });
-  }, [startDate, minTermMonths, cancellationMode, noticePeriod]);
+    return computeNextCancellationDate(
+      {
+        start_date: startDate || null,
+        min_term_months: minTermMonths ? Number(minTermMonths) : null,
+        cancellation_mode: cancellationMode || null,
+        notice_period: noticePeriod || null,
+      },
+      canceledAt ? new Date(canceledAt) : new Date(),
+    );
+  }, [startDate, minTermMonths, cancellationMode, noticePeriod, canceledAt]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -257,7 +261,21 @@ export function SubscriptionForm({
         </div>
 
         <div>
-          <FieldLabel>Nächstes Kündigungsdatum</FieldLabel>
+          <FieldLabel htmlFor="canceled_at">Gekündigt am</FieldLabel>
+          <input
+            id="canceled_at"
+            name="canceled_at"
+            type="date"
+            value={canceledAt}
+            onChange={(e) => setCanceledAt(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <FieldLabel>
+            {canceledAt ? "Vertragsende" : "Nächstes Kündigungsdatum"}
+          </FieldLabel>
           <input
             type="text"
             disabled
