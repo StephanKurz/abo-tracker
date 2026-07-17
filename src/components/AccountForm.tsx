@@ -13,7 +13,6 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
   const [nameInfo, setNameInfo] = useState<string | null>(null);
   const [nameLoading, setNameLoading] = useState(false);
 
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwInfo, setPwInfo] = useState<string | null>(null);
@@ -47,16 +46,6 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
     setPwLoading(true);
     const supabase = createClient();
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password: currentPassword,
-    });
-    if (signInError) {
-      setPwLoading(false);
-      setPwError("Aktuelles Passwort ist falsch.");
-      return;
-    }
-
     const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
     setPwLoading(false);
 
@@ -66,7 +55,6 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
     }
 
     setPwInfo("Passwort erfolgreich geändert.");
-    setCurrentPassword("");
     setNewPassword("");
   }
 
@@ -105,20 +93,6 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
 
       <form onSubmit={handlePasswordSubmit} className={`${cardClass} space-y-4`}>
         <h2 className="text-lg font-semibold text-gray-900">Passwort ändern</h2>
-
-        <div>
-          <FieldLabel required htmlFor="current_password">
-            Aktuelles Passwort
-          </FieldLabel>
-          <input
-            id="current_password"
-            type="password"
-            required
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            className={inputClass}
-          />
-        </div>
 
         <div>
           <FieldLabel required htmlFor="new_password">
