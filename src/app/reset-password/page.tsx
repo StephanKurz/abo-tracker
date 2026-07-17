@@ -14,17 +14,13 @@ function ResetPasswordForm() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => !searchParams.get("code"));
 
   useEffect(() => {
     const code = searchParams.get("code");
+    if (!code) return;
+
     const supabase = createClient();
-
-    if (!code) {
-      setReady(true);
-      return;
-    }
-
     supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
       if (exchangeError) {
         setError("Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Reset-Link an.");
