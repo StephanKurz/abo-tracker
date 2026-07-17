@@ -14,14 +14,18 @@ export default async function AccountPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, email")
+    .select("name, email, notify_days_before")
     .eq("id", user.id)
     .single();
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Mein Konto</h1>
-      <AccountForm name={profile?.name ?? ""} email={profile?.email ?? user.email ?? ""} />
+      <AccountForm
+        name={profile?.name ?? ""}
+        email={profile?.email ?? user.email ?? ""}
+        notifyDaysBefore={profile?.notify_days_before ?? null}
+      />
     </div>
   );
 }

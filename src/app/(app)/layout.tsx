@@ -17,15 +17,24 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: ratingStats }, { data: ownRating }] = await Promise.all([
+    supabase.from("profiles").select("name").eq("id", user.id).single(),
+    supabase.rpc("get_rating_stats").single(),
+    supabase.from("app_ratings").select("is_positive").eq("user_id", user.id).maybeSingle(),
+  ]);
+
+  const ratingPercentage =
+    ratingStats && ratingStats.total_users > 0
+      ? (ratingStats.positive_count / ratingStats.total_users) * 100
+      : 0;
 
   return (
     <div className="flex min-h-screen flex-col">
-      <NavBar name={profile?.name ?? user.email ?? ""} />
+      <NavBar
+        name={profile?.name ?? user.email ?? ""}
+        ratingPercentage={ratingPercentage}
+        hasRated={ownRating != null}
+      />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
       <SiteFooter />
     </div>
