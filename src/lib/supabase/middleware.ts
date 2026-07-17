@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/auth",
   "/datenschutz",
+  "/impressum",
 ];
 
 export async function updateSession(request: NextRequest) {

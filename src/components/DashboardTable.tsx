@@ -57,9 +57,9 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg bg-white shadow-md">
+      <div className="max-h-[55vh] overflow-auto rounded-lg bg-white shadow-md">
         <table className="w-full min-w-[960px] text-left text-sm">
-          <thead className="border-b border-gray-200 text-gray-600">
+          <thead className="sticky top-0 z-10 border-b border-gray-200 bg-white text-gray-600">
             <tr>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Name</th>
