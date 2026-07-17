@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/subscriptions/new", label: "Neues Abo" },
   { href: "/categories", label: "Kategorien" },
   { href: "/print", label: "Drucken" },
+  { href: "/account", label: "Mein Konto" },
 ];
 
 export function NavBar({ name }: { name: string }) {
