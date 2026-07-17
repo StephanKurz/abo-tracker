@@ -59,6 +59,8 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          last_notified_subscription_id: string | null
+          last_notified_target_date: string | null
           name: string
           notify_days_before: number | null
         }
@@ -66,6 +68,8 @@ export type Database = {
           created_at?: string
           email: string
           id: string
+          last_notified_subscription_id?: string | null
+          last_notified_target_date?: string | null
           name: string
           notify_days_before?: number | null
         }
@@ -73,6 +77,8 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          last_notified_subscription_id?: string | null
+          last_notified_target_date?: string | null
           name?: string
           notify_days_before?: number | null
         }
