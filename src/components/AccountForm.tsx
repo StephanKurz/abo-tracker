@@ -14,6 +14,7 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
   const [nameLoading, setNameLoading] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwInfo, setPwInfo] = useState<string | null>(null);
   const [pwLoading, setPwLoading] = useState(false);
@@ -43,6 +44,11 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
       return;
     }
 
+    if (newPassword !== newPasswordConfirm) {
+      setPwError("Die Passwörter stimmen nicht überein.");
+      return;
+    }
+
     setPwLoading(true);
     const supabase = createClient();
 
@@ -56,6 +62,7 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
 
     setPwInfo("Passwort erfolgreich geändert.");
     setNewPassword("");
+    setNewPasswordConfirm("");
   }
 
   return (
@@ -116,6 +123,20 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
               );
             })}
           </ul>
+        </div>
+
+        <div>
+          <FieldLabel required htmlFor="new_password_confirm">
+            Neues Passwort bestätigen
+          </FieldLabel>
+          <input
+            id="new_password_confirm"
+            type="password"
+            required
+            value={newPasswordConfirm}
+            onChange={(e) => setNewPasswordConfirm(e.target.value)}
+            className={inputClass}
+          />
         </div>
 
         {pwError && <p className="text-sm text-red-600">{pwError}</p>}
