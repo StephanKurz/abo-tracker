@@ -119,6 +119,43 @@ export function computeNextCancellationDate(
   return addMonths(anchor, noticeMonths);
 }
 
+/**
+ * The date shown as "Nächstes Kündigungsdatum" for a subscription.
+ *
+ * For an active (not cancelled) subscription this is always the next
+ * upcoming deadline relative to today, recalculated live — by
+ * construction it can never lie in the past, since an un-cancelled
+ * subscription just keeps auto-renewing.
+ *
+ * Once "gekündigt am" is set, the date instead becomes the fixed,
+ * final contract end date: the same formula evaluated with the
+ * cancellation date as the reference point instead of today. That
+ * date no longer moves forward with time and can end up in the past,
+ * which is what lets `isFullyExpired` detect a subscription whose
+ * cancelled contract has actually run out.
+ */
+export function getEffectiveCancellationDate(
+  sub: Pick<
+    Subscription,
+    "start_date" | "min_term_months" | "cancellation_mode" | "notice_period" | "canceled_at"
+  >,
+): Date | null {
+  const referenceDate = sub.canceled_at ? new Date(sub.canceled_at) : new Date();
+  return computeNextCancellationDate(sub, referenceDate);
+}
+
+export function isFullyExpired(
+  sub: Pick<
+    Subscription,
+    "start_date" | "min_term_months" | "cancellation_mode" | "notice_period" | "canceled_at"
+  >,
+  today: Date = new Date(),
+): boolean {
+  if (!sub.canceled_at) return false;
+  const effectiveEnd = getEffectiveCancellationDate(sub);
+  return effectiveEnd != null && effectiveEnd.getTime() < today.getTime();
+}
+
 export function computeYearlyCost(amount: number, billingCycle: string): number {
   return billingCycle === "yearly" ? amount : amount * 12;
 }

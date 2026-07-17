@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   BILLING_CYCLE_LABELS,
-  computeNextCancellationDate,
+  getEffectiveCancellationDate,
+  isFullyExpired,
   formatCurrency,
   formatDate,
 } from "@/lib/subscriptions";
@@ -23,8 +24,13 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
     });
   }, [subscriptions, sortDir]);
 
-  const totalYearly = subscriptions.reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
+  const active = subscriptions.filter((s) => !isFullyExpired(s));
+  const totalYearly = active.reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
   const totalMonthly = totalYearly / 12;
+
+  const activeUncanceled = active.filter((s) => !s.canceled_at);
+  const totalYearlyUncanceled = activeUncanceled.reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
+  const totalMonthlyUncanceled = totalYearlyUncanceled / 12;
 
   return (
     <div className="space-y-4">
@@ -38,15 +44,24 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
           <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthly)}</p>
         </div>
         <div>
+          <p className="text-xs text-gray-500">Gesamtsumme pro Jahr (ungekündigt)</p>
+          <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearlyUncanceled)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Gesamtsumme pro Monat (ungekündigt)</p>
+          <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthlyUncanceled)}</p>
+        </div>
+        <div>
           <p className="text-xs text-gray-500">Anzahl Abos</p>
           <p className="text-xl font-bold text-gray-900">{subscriptions.length}</p>
         </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg bg-white shadow-md">
-        <table className="w-full min-w-[900px] text-left text-sm">
+        <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="border-b border-gray-200 text-gray-600">
             <tr>
+              <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Kategorie</th>
               <th className="px-4 py-3">Abrechnung</th>
@@ -66,9 +81,20 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {sorted.map((sub) => {
-              const nextCancellation = computeNextCancellationDate(sub);
+              const nextCancellation = getEffectiveCancellationDate(sub);
               return (
                 <tr key={sub.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-center">
+                    {sub.canceled_at ? (
+                      <span title="Gekündigt" aria-label="Gekündigt" className="text-red-600">
+                        ✗
+                      </span>
+                    ) : (
+                      <span title="Nicht gekündigt" aria-label="Nicht gekündigt" className="text-green-600">
+                        ✓
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-medium text-gray-900">{sub.name}</td>
                   <td className="px-4 py-3 text-gray-700">{sub.category_name}</td>
                   <td className="px-4 py-3 text-gray-700">
@@ -93,7 +119,7 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                   Noch keine Abos erfasst.
                 </td>
               </tr>

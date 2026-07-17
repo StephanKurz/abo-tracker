@@ -59,6 +59,7 @@ export type Database = {
           amount: number
           billing_cycle: string
           cancellation_mode: string | null
+          canceled_at: string | null
           category_id: string
           created_at: string
           description: string | null
@@ -76,6 +77,7 @@ export type Database = {
           amount: number
           billing_cycle: string
           cancellation_mode?: string | null
+          canceled_at?: string | null
           category_id: string
           created_at?: string
           description?: string | null
@@ -93,6 +95,7 @@ export type Database = {
           amount?: number
           billing_cycle?: string
           cancellation_mode?: string | null
+          canceled_at?: string | null
           category_id?: string
           created_at?: string
           description?: string | null

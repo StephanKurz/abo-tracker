@@ -15,6 +15,7 @@ function parseSubscriptionForm(formData: FormData) {
   const category_id = String(formData.get("category_id") ?? "").trim();
   const cancellation_mode = String(formData.get("cancellation_mode") ?? "").trim();
   const notice_period = String(formData.get("notice_period") ?? "").trim();
+  const canceled_at = String(formData.get("canceled_at") ?? "").trim();
 
   const errors: string[] = [];
   if (!name) errors.push("Name ist ein Pflichtfeld.");
@@ -34,6 +35,7 @@ function parseSubscriptionForm(formData: FormData) {
     category_id,
     cancellation_mode: cancellation_mode || null,
     notice_period: notice_period || null,
+    canceled_at: canceled_at || null,
   };
 
   return { values, errors };
@@ -56,6 +58,7 @@ export async function createSubscription(formData: FormData) {
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard");
+  revalidatePath("/print");
   redirect("/dashboard");
 }
 
@@ -69,6 +72,7 @@ export async function updateSubscription(id: string, formData: FormData) {
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard");
+  revalidatePath("/print");
   revalidatePath(`/subscriptions/${id}`);
   redirect("/dashboard");
 }
@@ -79,5 +83,6 @@ export async function deleteSubscription(id: string) {
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard");
+  revalidatePath("/print");
   redirect("/dashboard");
 }
