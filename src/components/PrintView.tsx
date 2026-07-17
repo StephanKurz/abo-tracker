@@ -18,18 +18,18 @@ function CategoryTable({ rows }: { rows: Row[] }) {
       </colgroup>
       <thead className="text-gray-600">
         <tr>
-          <th className="py-1 pr-2">Status</th>
-          <th className="py-1 pr-2">Name</th>
-          <th className="py-1 pr-2">Abrechnung</th>
-          <th className="py-1 pr-2">Betrag</th>
-          <th className="py-1 pr-2">Jahreskosten</th>
-          <th className="py-1 pr-2">Abschlussdatum</th>
+          <th className="py-1 pr-2 print:py-0.5">Status</th>
+          <th className="py-1 pr-2 print:py-0.5">Name</th>
+          <th className="py-1 pr-2 print:py-0.5">Abrechnung</th>
+          <th className="py-1 pr-2 print:py-0.5">Betrag</th>
+          <th className="py-1 pr-2 print:py-0.5">Jahreskosten</th>
+          <th className="py-1 pr-2 print:py-0.5">Abschlussdatum</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((sub) => (
           <tr key={sub.id} className="border-t border-gray-100">
-            <td className="py-1 pr-2">
+            <td className="py-1 pr-2 print:py-0.5">
               {sub.canceled_at ? (
                 <span title="Gekündigt" aria-label="Gekündigt" className="text-red-600">
                   ✗
@@ -40,11 +40,11 @@ function CategoryTable({ rows }: { rows: Row[] }) {
                 </span>
               )}
             </td>
-            <td className="truncate py-1 pr-2">{sub.name}</td>
-            <td className="py-1 pr-2">{BILLING_CYCLE_LABELS[sub.billing_cycle] ?? sub.billing_cycle}</td>
-            <td className="py-1 pr-2">{formatCurrency(sub.amount)}</td>
-            <td className="py-1 pr-2">{formatCurrency(sub.yearly_cost)}</td>
-            <td className="py-1 pr-2">{formatDate(sub.start_date)}</td>
+            <td className="truncate py-1 pr-2 print:py-0.5">{sub.name}</td>
+            <td className="py-1 pr-2 print:py-0.5">{BILLING_CYCLE_LABELS[sub.billing_cycle] ?? sub.billing_cycle}</td>
+            <td className="py-1 pr-2 print:py-0.5">{formatCurrency(sub.amount)}</td>
+            <td className="py-1 pr-2 print:py-0.5">{formatCurrency(sub.yearly_cost)}</td>
+            <td className="py-1 pr-2 print:py-0.5">{formatDate(sub.start_date)}</td>
           </tr>
         ))}
       </tbody>
@@ -88,8 +88,10 @@ export function PrintView({
         {userName} · {userEmail}
       </div>
 
-      <div className="space-y-6 rounded-lg bg-white p-6 shadow-md print:rounded-none print:p-0 print:shadow-none">
-        <h2 className="text-xl font-bold text-gray-900">Alle Abos nach Kategorie</h2>
+      <div className="space-y-6 rounded-lg bg-white p-6 shadow-md print:space-y-3 print:rounded-none print:p-0 print:shadow-none">
+        <h2 className="text-xl font-bold text-gray-900 print:mb-1 print:text-base">
+          Alle Abos nach Kategorie
+        </h2>
 
         {categoryNames.length === 0 && (
           <p className="text-sm text-gray-600">Keine Abos vorhanden.</p>
@@ -102,22 +104,22 @@ export function PrintView({
             .reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
           return (
             <div key={categoryName} className="break-inside-avoid">
-              <h3 className="mb-2 border-b border-gray-300 pb-1 text-lg font-semibold text-gray-900">
+              <h3 className="mb-1 border-b border-gray-300 pb-1 text-lg font-semibold text-gray-900 print:text-sm">
                 {categoryName}
               </h3>
               <CategoryTable rows={rows} />
-              <p className="mt-1 text-right text-sm font-semibold text-gray-800">
+              <p className="mt-1 text-right text-sm font-semibold text-gray-800 print:text-xs">
                 Zwischensumme: {formatCurrency(subtotal)} / Jahr
               </p>
             </div>
           );
         })}
 
-        <div className="border-t border-gray-300 pt-3 text-right">
-          <p className="text-lg font-bold text-gray-900">
+        <div className="border-t border-gray-300 pt-3 text-right print:pt-1">
+          <p className="text-lg font-bold text-gray-900 print:text-sm">
             Gesamtsumme: {formatCurrency(grandTotal)} / Jahr
           </p>
-          <p className="text-sm font-semibold text-gray-700">
+          <p className="text-sm font-semibold text-gray-700 print:text-xs">
             Gesamtsumme ungekündigt: {formatCurrency(grandTotalUncanceled)} / Jahr
           </p>
         </div>

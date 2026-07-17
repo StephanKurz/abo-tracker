@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { inputClass, buttonPrimaryClass, buttonSecondaryClass, cardClass } from "@/components/ui/formStyles";
-import { SiteFooter } from "@/components/SiteFooter";
 
 function VerifyEmailForm() {
   const router = useRouter();
@@ -58,8 +57,6 @@ function VerifyEmailForm() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex flex-1 items-center justify-center p-4">
       <div className={`${cardClass} w-full max-w-md`}>
         <h1 className="mb-2 text-2xl font-bold text-gray-900">E-Mail bestätigen</h1>
         <p className="mb-6 text-sm text-gray-600">
@@ -104,9 +101,6 @@ function VerifyEmailForm() {
           </button>
         </form>
       </div>
-      </main>
-      <SiteFooter />
-    </div>
   );
 }
 

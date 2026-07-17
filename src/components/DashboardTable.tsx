@@ -97,7 +97,7 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
         </div>
       </div>
 
-      <div className="max-h-[55vh] overflow-auto rounded-lg bg-white shadow-md">
+      <div className="overflow-x-auto rounded-lg bg-white shadow-md">
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="sticky top-0 z-10 border-b border-gray-200 bg-white text-gray-600">
             <tr>
@@ -105,8 +105,8 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Kategorie</th>
               <th className="px-4 py-3">Abrechnung</th>
-              <th className="px-4 py-3">Betrag</th>
-              <th className="px-4 py-3">Jahreskosten</th>
+              <th className="px-4 py-3 text-right">Betrag</th>
+              <th className="px-4 py-3 text-right">Jahreskosten</th>
               <th className="px-4 py-3">
                 <button
                   onClick={() => toggleSort("startDate")}
@@ -148,8 +148,8 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
                   <td className="px-4 py-3 text-gray-700">
                     {BILLING_CYCLE_LABELS[sub.billing_cycle] ?? sub.billing_cycle}
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{formatCurrency(sub.amount)}</td>
-                  <td className="px-4 py-3 text-gray-700">{formatCurrency(sub.yearly_cost)}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(sub.amount)}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(sub.yearly_cost)}</td>
                   <td className="px-4 py-3 text-gray-700">{formatDate(sub.start_date)}</td>
                   <td className="px-4 py-3 text-gray-700">
                     {nextCancellation ? formatDate(nextCancellation) : "–"}
