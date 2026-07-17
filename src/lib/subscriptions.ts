@@ -18,6 +18,7 @@ export const NOTICE_PERIOD_LABELS: Record<string, string> = {
   "1_month": "1 Monat",
   "3_months": "3 Monate",
   end_of_year: "3 Monate zum Jahresende",
+  anytime: "jederzeit",
 };
 
 function addMonths(date: Date, months: number): Date {
@@ -52,7 +53,11 @@ function nextCycleAnchor(start: Date, mode: string, today: Date): Date {
  *   Kündigungsdatum.
  * - Danach: nächster Kündigungsmodus-Zyklustermin (auf Basis des
  *   Abschlussdatum-Tages) zzgl. Kündigungsfrist. Bei "zum Jahresende" ist
- *   der Stichtag fix 3 Monate vor Jahresende (30.9.).
+ *   der Stichtag fix 3 Monate vor Jahresende (30.9.). Bei "jederzeit" endet
+ *   das Abo zum Tag vor dem Abschlussdatum-Tag im laufenden Monat (falls
+ *   dieser Tag noch nicht erreicht ist) oder im Folgemonat (falls er schon
+ *   erreicht/vorbei ist) — z. B. Abschlusstag 19., heute 17.: kündbar bis
+ *   18. des laufenden Monats; ab dem 19. dann bis 18. des Folgemonats.
  * Diese Formel ist aus einer mehrdeutigen fachlichen Vorgabe abgeleitet
  * und mit dem Auftraggeber als "zwei unabhängige Felder" abgestimmt.
  */
@@ -83,6 +88,16 @@ export function computeNextCancellationDate(
       deadline = new Date(today.getFullYear() + 1, 8, 30);
     }
     return deadline;
+  }
+
+  if (sub.notice_period === "anytime") {
+    const day = start.getDate();
+    const candidate = new Date(today.getFullYear(), today.getMonth(), day);
+    const target =
+      today.getTime() < candidate.getTime()
+        ? candidate
+        : new Date(today.getFullYear(), today.getMonth() + 1, day);
+    return new Date(target.getFullYear(), target.getMonth(), target.getDate() - 1);
   }
 
   const anchor = nextCycleAnchor(start, sub.cancellation_mode, today);

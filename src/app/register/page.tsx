@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,6 +23,11 @@ export default function RegisterPage() {
 
     if (!isPasswordValid(password)) {
       setError("Bitte alle Passwort-Anforderungen erfüllen.");
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      setError("Die Passwörter stimmen nicht überein.");
       return;
     }
 
@@ -100,6 +106,20 @@ export default function RegisterPage() {
                 );
               })}
             </ul>
+          </div>
+
+          <div>
+            <FieldLabel required htmlFor="password_confirm">
+              Passwort bestätigen
+            </FieldLabel>
+            <input
+              id="password_confirm"
+              type="password"
+              required
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
+              className={inputClass}
+            />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
