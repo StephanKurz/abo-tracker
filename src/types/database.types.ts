@@ -36,23 +36,88 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          created_by: string
           id: string
           name: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          created_by: string
           id?: string
           name: string
           user_id: string
         }
         Update: {
           created_at?: string
+          created_by?: string
           id?: string
           name?: string
           user_id?: string
         }
         Relationships: []
+      }
+      overviews: {
+        Row: {
+          created_at: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
+      overview_collaborators: {
+        Row: {
+          collaborator_id: string | null
+          created_at: string
+          id: string
+          invited_by: string
+          invited_email: string
+          overview_owner_id: string
+          permission: string
+          responded_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          collaborator_id?: string | null
+          created_at?: string
+          id?: string
+          invited_by: string
+          invited_email: string
+          overview_owner_id: string
+          permission: string
+          responded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          collaborator_id?: string | null
+          created_at?: string
+          id?: string
+          invited_by?: string
+          invited_email?: string
+          overview_owner_id?: string
+          permission?: string
+          responded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overview_collaborators_overview_owner_id_fkey"
+            columns: ["overview_owner_id"]
+            isOneToOne: false
+            referencedRelation: "overviews"
+            referencedColumns: ["owner_id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -92,6 +157,7 @@ export type Database = {
           canceled_at: string | null
           category_id: string
           created_at: string
+          created_by: string
           description: string | null
           earliest_cancellation_date: string | null
           id: string
@@ -100,6 +166,7 @@ export type Database = {
           notice_period: string | null
           start_date: string | null
           updated_at: string
+          updated_by: string | null
           user_id: string
           yearly_cost: number | null
         }
@@ -110,6 +177,7 @@ export type Database = {
           canceled_at?: string | null
           category_id: string
           created_at?: string
+          created_by: string
           description?: string | null
           earliest_cancellation_date?: string | null
           id?: string
@@ -118,6 +186,7 @@ export type Database = {
           notice_period?: string | null
           start_date?: string | null
           updated_at?: string
+          updated_by?: string | null
           user_id: string
           yearly_cost?: number | null
         }
@@ -128,6 +197,7 @@ export type Database = {
           canceled_at?: string | null
           category_id?: string
           created_at?: string
+          created_by?: string
           description?: string | null
           earliest_cancellation_date?: string | null
           id?: string
@@ -136,6 +206,7 @@ export type Database = {
           notice_period?: string | null
           start_date?: string | null
           updated_at?: string
+          updated_by?: string | null
           user_id?: string
           yearly_cost?: number | null
         }
@@ -158,6 +229,11 @@ export type Database = {
       get_rating_stats: {
         Args: Record<PropertyKey, never>
         Returns: { positive_count: number; total_users: number }[]
+      }
+      overview_permission: { Args: { target_owner_id: string }; Returns: string | null }
+      lookup_invite_email: {
+        Args: { p_email: string }
+        Returns: { found: boolean; name: string | null }[]
       }
     }
     Enums: {

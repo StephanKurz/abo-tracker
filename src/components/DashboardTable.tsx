@@ -9,12 +9,26 @@ import {
   formatCurrency,
   formatDate,
 } from "@/lib/subscriptions";
+import { canWriteRow } from "@/lib/sharing";
 import type { Subscription } from "@/lib/subscriptions";
+import type { Role } from "@/lib/sharing";
 
-type Row = Subscription & { category_name: string };
+type Row = Subscription & {
+  category_name: string;
+  created_by_name: string;
+  updated_by_name: string | null;
+};
 type SortColumn = "startDate" | "nextCancellation";
 
-export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
+export function DashboardTable({
+  subscriptions,
+  viewerId,
+  role,
+}: {
+  subscriptions: Row[];
+  viewerId: string;
+  role: Role;
+}) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("nextCancellation");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -121,7 +135,7 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
                   onClick={() => toggleSort("nextCancellation")}
                   className="flex w-full items-center justify-end gap-1 whitespace-nowrap font-medium hover:text-orange-600"
                 >
-                  <span>Nächstes Kündigungsdatum</span>
+                  <span>Kündbar bis</span>
                   {sortColumn === "nextCancellation" && <span>{sortDir === "asc" ? "▲" : "▼"}</span>}
                 </button>
               </th>
@@ -144,7 +158,15 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">{sub.name}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {sub.name}
+                    <div className="text-xs font-normal text-gray-500">
+                      von {sub.created_by_name}
+                      {sub.updated_by_name && sub.updated_by !== sub.created_by
+                        ? ` · geändert von ${sub.updated_by_name}`
+                        : ""}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-gray-700">{sub.category_name}</td>
                   <td className="px-4 py-3 text-gray-700">
                     {BILLING_CYCLE_LABELS[sub.billing_cycle] ?? sub.billing_cycle}
@@ -160,7 +182,7 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
                       href={`/subscriptions/${sub.id}`}
                       className="text-orange-600 hover:underline"
                     >
-                      Bearbeiten
+                      {canWriteRow(role, viewerId, sub.created_by) ? "Bearbeiten" : "Ansehen"}
                     </Link>
                   </td>
                 </tr>

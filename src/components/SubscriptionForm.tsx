@@ -31,11 +31,19 @@ export function SubscriptionForm({
   initial,
   action,
   onDelete,
+  readOnly = false,
+  overviewOwnerId,
+  createdByName,
+  updatedByName,
 }: {
   categories: Category[];
   initial?: Subscription;
-  action: (formData: FormData) => Promise<ActionResult>;
+  action?: (formData: FormData) => Promise<ActionResult>;
   onDelete?: () => Promise<ActionResult>;
+  readOnly?: boolean;
+  overviewOwnerId?: string;
+  createdByName?: string;
+  updatedByName?: string | null;
 }) {
   const router = useRouter();
   const [startDate, setStartDate] = useState(initial?.start_date ?? "");
@@ -80,6 +88,7 @@ export function SubscriptionForm({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!action || readOnly) return;
     setError(null);
     setLoading(true);
     const formData = new FormData(e.currentTarget);
@@ -96,19 +105,61 @@ export function SubscriptionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={`${cardClass} space-y-5`}>
-      <div>
-        <FieldLabel required htmlFor="name">
-          Name
-        </FieldLabel>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          defaultValue={initial?.name}
-          className={inputClass}
-        />
+    <form onSubmit={handleSubmit} className={`${cardClass} space-y-2 p-4 sm:p-5`}>
+      {!initial && overviewOwnerId && (
+        <input type="hidden" name="overview_owner_id" value={overviewOwnerId} />
+      )}
+      {readOnly && (
+        <p className="inline-block rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">
+          Nur Lesen
+        </p>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <FieldLabel required htmlFor="name">
+            Name
+          </FieldLabel>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            disabled={readOnly}
+            defaultValue={initial?.name}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="min-w-0">
+          <FieldLabel required htmlFor="category_id">
+            Kategorie
+          </FieldLabel>
+          <select
+            id="category_id"
+            name="category_id"
+            required
+            disabled={readOnly}
+            defaultValue={initial?.category_id ?? ""}
+            className={inputClass}
+          >
+            <option value="" disabled>
+              Bitte wählen…
+            </option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          {categories.length === 0 && (
+            <p className="mt-1 text-xs text-gray-500">
+              Noch keine Kategorien.{" "}
+              <Link href="/categories" className="text-orange-600 hover:underline">
+                Jetzt anlegen
+              </Link>
+            </p>
+          )}
+        </div>
       </div>
 
       <div>
@@ -116,19 +167,21 @@ export function SubscriptionForm({
         <textarea
           id="description"
           name="description"
-          rows={3}
+          rows={2}
+          disabled={readOnly}
           defaultValue={initial?.description ?? ""}
           className={textareaClass}
         />
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="min-w-0">
           <FieldLabel htmlFor="start_date">Abschlussdatum</FieldLabel>
           <input
             id="start_date"
             name="start_date"
             type="date"
+            disabled={readOnly}
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className={inputClass}
@@ -143,6 +196,7 @@ export function SubscriptionForm({
             id="billing_cycle"
             name="billing_cycle"
             required
+            disabled={readOnly}
             value={billingCycle}
             onChange={(e) => setBillingCycle(e.target.value)}
             className={inputClass}
@@ -159,6 +213,7 @@ export function SubscriptionForm({
             name="min_term_months"
             type="number"
             min={0}
+            disabled={readOnly}
             value={minTermMonths}
             onChange={(e) => setMinTermMonths(e.target.value)}
             className={inputClass}
@@ -186,6 +241,7 @@ export function SubscriptionForm({
             type="text"
             inputMode="decimal"
             required
+            disabled={readOnly}
             value={amount}
             onChange={(e) =>
               setAmount(e.target.value.replace(/[^0-9,]/g, "").replace(/(,.*),/g, "$1"))
@@ -211,40 +267,11 @@ export function SubscriptionForm({
         </div>
 
         <div className="min-w-0">
-          <FieldLabel required htmlFor="category_id">
-            Kategorie
-          </FieldLabel>
-          <select
-            id="category_id"
-            name="category_id"
-            required
-            defaultValue={initial?.category_id ?? ""}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              Bitte wählen…
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          {categories.length === 0 && (
-            <p className="mt-1 text-xs text-gray-500">
-              Noch keine Kategorien.{" "}
-              <Link href="/categories" className="text-orange-600 hover:underline">
-                Jetzt anlegen
-              </Link>
-            </p>
-          )}
-        </div>
-
-        <div className="min-w-0">
           <FieldLabel htmlFor="cancellation_mode">Kündigungsmodus</FieldLabel>
           <select
             id="cancellation_mode"
             name="cancellation_mode"
+            disabled={readOnly}
             value={cancellationMode}
             onChange={(e) => setCancellationMode(e.target.value)}
             className={inputClass}
@@ -263,6 +290,7 @@ export function SubscriptionForm({
           <select
             id="notice_period"
             name="notice_period"
+            disabled={readOnly}
             value={noticePeriod}
             onChange={(e) => setNoticePeriod(e.target.value)}
             className={inputClass}
@@ -282,6 +310,7 @@ export function SubscriptionForm({
             id="canceled_at"
             name="canceled_at"
             type="date"
+            disabled={readOnly}
             value={canceledAt}
             onChange={(e) => setCanceledAt(e.target.value)}
             className={inputClass}
@@ -290,7 +319,7 @@ export function SubscriptionForm({
 
         <div className="min-w-0">
           <FieldLabel>
-            {canceledAt ? "Vertragsende" : "Nächstes Kündigungsdatum"}
+            {canceledAt ? "Vertragsende" : "Kündbar bis"}
           </FieldLabel>
           <input
             type="text"
@@ -300,18 +329,46 @@ export function SubscriptionForm({
             className={inputClass}
           />
         </div>
+
+        {initial && createdByName && (
+          <div className="min-w-0">
+            <FieldLabel>Angelegt von</FieldLabel>
+            <input
+              type="text"
+              disabled
+              readOnly
+              value={`${createdByName} am ${formatDate(initial.created_at)}`}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {initial && updatedByName && (
+          <div className="min-w-0">
+            <FieldLabel>Zuletzt geändert von</FieldLabel>
+            <input
+              type="text"
+              disabled
+              readOnly
+              value={`${updatedByName} am ${formatDate(initial.updated_at)}`}
+              className={inputClass}
+            />
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={loading} className={buttonPrimaryClass}>
-          {loading ? "Wird gespeichert…" : "Speichern"}
-        </button>
+        {!readOnly && (
+          <button type="submit" disabled={loading} className={buttonPrimaryClass}>
+            {loading ? "Wird gespeichert…" : "Speichern"}
+          </button>
+        )}
         <button type="button" onClick={() => router.push("/dashboard")} className={buttonSecondaryClass}>
-          Abbrechen
+          {readOnly ? "Zurück" : "Abbrechen"}
         </button>
-        {onDelete && (
+        {!readOnly && onDelete && (
           <button
             type="button"
             onClick={handleDelete}
