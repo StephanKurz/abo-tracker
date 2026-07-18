@@ -121,7 +121,7 @@ export async function GET(request: Request) {
     if (!nearest) continue;
 
     const daysUntil = Math.round((nearest.date.getTime() - today.getTime()) / 86_400_000);
-    if (daysUntil !== profile.notify_days_before) continue;
+    if (daysUntil > profile.notify_days_before) continue;
 
     const targetDateStr = nearest.date.toISOString().slice(0, 10);
     if (

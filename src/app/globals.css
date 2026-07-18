@@ -20,6 +20,25 @@ html {
   overflow-x: hidden;
 }
 
+/*
+ * Safari (especially iOS) renders <input type="date"> with its own
+ * internal sizing for the day/month/year text that ignores our
+ * height/line-height utilities, making it taller and misaligned
+ * compared to plain text/select inputs at the same declared height.
+ * Resetting the native appearance and the WebKit-specific inner value
+ * element is the standard fix for this class of bug.
+ */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  min-height: 1.25rem;
+  text-align: left;
+  margin: 0;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

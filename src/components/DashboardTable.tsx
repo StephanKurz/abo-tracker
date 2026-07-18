@@ -107,21 +107,22 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
               <th className="px-4 py-3">Abrechnung</th>
               <th className="px-4 py-3 text-right">Betrag</th>
               <th className="px-4 py-3 text-right">Jahreskosten</th>
-              <th className="px-4 py-3">
+              <th className="px-4 py-3 text-right">
                 <button
                   onClick={() => toggleSort("startDate")}
-                  className="flex items-center gap-1 font-medium hover:text-orange-600"
+                  className="flex w-full items-center justify-end gap-1 whitespace-nowrap font-medium hover:text-orange-600"
                 >
-                  Abschlussdatum {sortColumn === "startDate" && (sortDir === "asc" ? "▲" : "▼")}
+                  <span>Abschlussdatum</span>
+                  {sortColumn === "startDate" && <span>{sortDir === "asc" ? "▲" : "▼"}</span>}
                 </button>
               </th>
-              <th className="px-4 py-3">
+              <th className="px-4 py-3 text-right">
                 <button
                   onClick={() => toggleSort("nextCancellation")}
-                  className="flex items-center gap-1 font-medium hover:text-orange-600"
+                  className="flex w-full items-center justify-end gap-1 whitespace-nowrap font-medium hover:text-orange-600"
                 >
-                  Nächstes Kündigungsdatum{" "}
-                  {sortColumn === "nextCancellation" && (sortDir === "asc" ? "▲" : "▼")}
+                  <span>Nächstes Kündigungsdatum</span>
+                  {sortColumn === "nextCancellation" && <span>{sortDir === "asc" ? "▲" : "▼"}</span>}
                 </button>
               </th>
               <th className="px-4 py-3" />
@@ -150,8 +151,8 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
                   </td>
                   <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(sub.amount)}</td>
                   <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(sub.yearly_cost)}</td>
-                  <td className="px-4 py-3 text-gray-700">{formatDate(sub.start_date)}</td>
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="px-4 py-3 text-right text-gray-700">{formatDate(sub.start_date)}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">
                     {nextCancellation ? formatDate(nextCancellation) : "–"}
                   </td>
                   <td className="px-4 py-3 text-right">
