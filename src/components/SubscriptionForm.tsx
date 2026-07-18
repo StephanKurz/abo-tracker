@@ -33,6 +33,8 @@ export function SubscriptionForm({
   onDelete,
   readOnly = false,
   overviewOwnerId,
+  createdByName,
+  updatedByName,
 }: {
   categories: Category[];
   initial?: Subscription;
@@ -40,6 +42,8 @@ export function SubscriptionForm({
   onDelete?: () => Promise<ActionResult>;
   readOnly?: boolean;
   overviewOwnerId?: string;
+  createdByName?: string;
+  updatedByName?: string | null;
 }) {
   const router = useRouter();
   const [startDate, setStartDate] = useState(initial?.start_date ?? "");
@@ -325,6 +329,32 @@ export function SubscriptionForm({
             className={inputClass}
           />
         </div>
+
+        {initial && createdByName && (
+          <div className="min-w-0">
+            <FieldLabel>Angelegt von</FieldLabel>
+            <input
+              type="text"
+              disabled
+              readOnly
+              value={`${createdByName} am ${formatDate(initial.created_at)}`}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {initial && updatedByName && (
+          <div className="min-w-0">
+            <FieldLabel>Zuletzt geändert von</FieldLabel>
+            <input
+              type="text"
+              disabled
+              readOnly
+              value={`${updatedByName} am ${formatDate(initial.updated_at)}`}
+              className={inputClass}
+            />
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

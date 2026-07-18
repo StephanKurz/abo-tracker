@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  deleteCollaboratorRow,
   inviteCollaborator,
   lookupInviteEmail,
   revokeCollaborator,
@@ -10,7 +11,7 @@ import {
 } from "@/app/actions/sharing";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
-import { PERMISSION_LABELS, STATUS_LABELS } from "@/lib/sharing";
+import { formatDateTime, PERMISSION_LABELS, STATUS_LABELS } from "@/lib/sharing";
 import type { CollaboratorStatus, InvitePermission } from "@/lib/sharing";
 
 type CollaboratorRow = {
@@ -18,7 +19,17 @@ type CollaboratorRow = {
   label: string;
   permission: InvitePermission;
   status: CollaboratorStatus;
+  invitedAt: string;
+  respondedAt: string | null;
 };
+
+function statusText(row: CollaboratorRow): string {
+  if (row.status === "pending") return `Eingeladen am ${formatDateTime(row.invitedAt)}`;
+  if (row.status === "revoked" && row.respondedAt) {
+    return `Widerrufen am ${formatDateTime(row.respondedAt)}`;
+  }
+  return STATUS_LABELS[row.status];
+}
 
 export function ShareAccessCard({
   hasOverview,
@@ -78,8 +89,14 @@ export function ShareAccessCard({
     router.refresh();
   }
 
+  async function handleDelete(id: string) {
+    if (!window.confirm("Diesen Eintrag wirklich endgültig löschen?")) return;
+    await deleteCollaboratorRow(id);
+    router.refresh();
+  }
+
   return (
-    <div className={`${cardClass} space-y-4`}>
+    <div className={`${cardClass} space-y-3 p-4 sm:p-5`}>
       <h2 className="text-lg font-semibold text-gray-900">Zugriff teilen</h2>
       <p className="text-sm text-gray-600">
         Lade eine andere Person ein, deine Abo-Übersicht einzusehen oder zu bearbeiten.
@@ -132,7 +149,7 @@ export function ShareAccessCard({
           {collaborators.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center gap-3 py-3">
               <span className="flex-1 text-gray-900">{c.label}</span>
-              <span className="text-xs text-gray-500">{STATUS_LABELS[c.status]}</span>
+              <span className="text-xs text-gray-500">{statusText(c)}</span>
               {(c.status === "pending" || c.status === "accepted") && (
                 <>
                   <select
@@ -151,6 +168,14 @@ export function ShareAccessCard({
                     Widerrufen
                   </button>
                 </>
+              )}
+              {c.status === "revoked" && (
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  className="text-sm text-red-700 hover:underline"
+                >
+                  Löschen
+                </button>
               )}
             </li>
           ))}

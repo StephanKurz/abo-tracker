@@ -25,7 +25,7 @@ export default async function AccountPage() {
     ownOverview
       ? supabase
           .from("overview_collaborators")
-          .select("id, invited_email, permission, status, collaborator_id")
+          .select("id, invited_email, permission, status, collaborator_id, created_at, responded_at")
           .eq("overview_owner_id", user.id)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
@@ -57,6 +57,8 @@ export default async function AccountPage() {
     label: o.collaborator_id ? (names.get(o.collaborator_id) ?? o.invited_email) : o.invited_email,
     permission: o.permission as InvitePermission,
     status: o.status as CollaboratorStatus,
+    invitedAt: o.created_at,
+    respondedAt: o.responded_at,
   }));
 
   const incomingInvites = incoming.map((i) => ({
@@ -67,7 +69,7 @@ export default async function AccountPage() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Mein Konto</h1>
       <AccountForm
         name={profile?.name ?? ""}
@@ -75,8 +77,10 @@ export default async function AccountPage() {
         notifyDaysBefore={profile?.notify_days_before ?? null}
         rating={ownRating?.is_positive ?? null}
       />
-      <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
-      <MyInvitesCard invites={incomingInvites} />
+      <div className="grid items-start gap-4 sm:grid-cols-2">
+        <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
+        <MyInvitesCard invites={incomingInvites} />
+      </div>
     </div>
   );
 }

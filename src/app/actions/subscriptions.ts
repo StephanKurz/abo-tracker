@@ -94,7 +94,10 @@ export async function updateSubscription(id: string, formData: FormData) {
     return { error: "Keine Berechtigung, dieses Abo zu bearbeiten." };
   }
 
-  const { error } = await supabase.from("subscriptions").update(values).eq("id", id);
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({ ...values, updated_by: user.id, updated_at: new Date().toISOString() })
+    .eq("id", id);
 
   if (error) return { error: error.message };
 

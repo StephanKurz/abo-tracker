@@ -161,6 +161,25 @@ export async function revokeCollaborator(id: string): Promise<ActionResult> {
   return { error: null };
 }
 
+export async function deleteCollaboratorRow(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const { error } = await supabase
+    .from("overview_collaborators")
+    .delete()
+    .eq("id", id)
+    .eq("overview_owner_id", user.id)
+    .eq("status", "revoked");
+  if (error) return { error: error.message };
+
+  revalidatePath("/account");
+  return { error: null };
+}
+
 export async function acceptInvite(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase

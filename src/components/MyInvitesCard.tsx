@@ -34,7 +34,7 @@ export function MyInvitesCard({ invites }: { invites: InviteRow[] }) {
   const active = invites.filter((i) => i.status === "accepted");
 
   return (
-    <div className={`${cardClass} space-y-4`}>
+    <div className={`${cardClass} space-y-3 p-4 sm:p-5`}>
       <h2 className="text-lg font-semibold text-gray-900">Einladungen</h2>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

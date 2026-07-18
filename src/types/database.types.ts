@@ -166,6 +166,7 @@ export type Database = {
           notice_period: string | null
           start_date: string | null
           updated_at: string
+          updated_by: string | null
           user_id: string
           yearly_cost: number | null
         }
@@ -185,6 +186,7 @@ export type Database = {
           notice_period?: string | null
           start_date?: string | null
           updated_at?: string
+          updated_by?: string | null
           user_id: string
           yearly_cost?: number | null
         }
@@ -204,6 +206,7 @@ export type Database = {
           notice_period?: string | null
           start_date?: string | null
           updated_at?: string
+          updated_by?: string | null
           user_id?: string
           yearly_cost?: number | null
         }

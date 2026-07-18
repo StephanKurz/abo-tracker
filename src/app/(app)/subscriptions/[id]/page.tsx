@@ -31,6 +31,22 @@ export default async function EditSubscriptionPage({
 
   const readOnly = !canWriteRow(active.role, user.id, subscription.created_by);
 
+  const contributorIds = [
+    ...new Set([subscription.created_by, subscription.updated_by].filter((v): v is string => !!v)),
+  ];
+  const contributorNames = new Map<string, string>();
+  if (contributorIds.length > 0) {
+    const { data: contributors } = await supabase
+      .from("profiles")
+      .select("id, name")
+      .in("id", contributorIds);
+    for (const p of contributors ?? []) contributorNames.set(p.id, p.name);
+  }
+  const createdByName = contributorNames.get(subscription.created_by) ?? "Unbekannt";
+  const updatedByName = subscription.updated_by
+    ? (contributorNames.get(subscription.updated_by) ?? "Unbekannt")
+    : null;
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">
@@ -42,6 +58,8 @@ export default async function EditSubscriptionPage({
         action={readOnly ? undefined : updateSubscription.bind(null, id)}
         onDelete={readOnly ? undefined : deleteSubscription.bind(null, id)}
         readOnly={readOnly}
+        createdByName={createdByName}
+        updatedByName={updatedByName}
       />
     </div>
   );

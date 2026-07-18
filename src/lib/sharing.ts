@@ -23,6 +23,18 @@ export const STATUS_LABELS: Record<CollaboratorStatus, string> = {
   left: "Verlassen",
 };
 
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "";
+  const formatted = new Intl.DateTimeFormat("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+  return `${formatted} Uhr`;
+}
+
 export function canWriteAny(role: Role): boolean {
   return role === "owner" || role === "full" || role === "full_own";
 }

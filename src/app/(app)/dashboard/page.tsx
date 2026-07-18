@@ -25,9 +25,25 @@ export default async function DashboardPage() {
     .eq("user_id", active.ownerId)
     .order("start_date", { ascending: true });
 
+  const contributorIds = [
+    ...new Set(
+      (subscriptions ?? []).flatMap((s) => [s.created_by, s.updated_by].filter((v): v is string => !!v)),
+    ),
+  ];
+  const contributorNames = new Map<string, string>();
+  if (contributorIds.length > 0) {
+    const { data: contributors } = await supabase
+      .from("profiles")
+      .select("id, name")
+      .in("id", contributorIds);
+    for (const p of contributors ?? []) contributorNames.set(p.id, p.name);
+  }
+
   const rows = (subscriptions ?? []).map((sub) => ({
     ...sub,
     category_name: (sub as { categories?: { name: string } | null }).categories?.name ?? "–",
+    created_by_name: contributorNames.get(sub.created_by) ?? "Unbekannt",
+    updated_by_name: sub.updated_by ? (contributorNames.get(sub.updated_by) ?? "Unbekannt") : null,
   }));
 
   const canCreate = active.role !== "read";
