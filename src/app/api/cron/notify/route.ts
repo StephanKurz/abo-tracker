@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendMail } from "@/lib/email";
 import {
   BILLING_CYCLE_LABELS,
   CANCELLATION_MODE_LABELS,
@@ -16,20 +16,7 @@ export const maxDuration = 60;
 
 type SubscriptionWithCategory = Subscription & { categories: { name: string } | null };
 
-function createTransporter() {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASSWORD,
-    },
-  });
-}
-
 async function sendNotificationEmail(
-  transporter: nodemailer.Transporter,
   profile: { name: string; email: string },
   sub: SubscriptionWithCategory,
   targetDate: Date,
@@ -68,8 +55,7 @@ async function sendNotificationEmail(
     </table>
   `;
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM,
+  await sendMail({
     to: profile.email,
     subject: `Kündigungserinnerung: ${sub.name}`,
     html,
@@ -97,7 +83,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: profilesError.message }, { status: 500 });
   }
 
-  const transporter = createTransporter();
   let sent = 0;
   const errors: string[] = [];
 
@@ -132,7 +117,7 @@ export async function GET(request: Request) {
     }
 
     try {
-      await sendNotificationEmail(transporter, profile, nearest.sub, nearest.date);
+      await sendNotificationEmail(profile, nearest.sub, nearest.date);
       await supabase
         .from("profiles")
         .update({

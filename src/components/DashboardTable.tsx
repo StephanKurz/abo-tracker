@@ -9,12 +9,22 @@ import {
   formatCurrency,
   formatDate,
 } from "@/lib/subscriptions";
+import { canWriteRow } from "@/lib/sharing";
 import type { Subscription } from "@/lib/subscriptions";
+import type { Role } from "@/lib/sharing";
 
 type Row = Subscription & { category_name: string };
 type SortColumn = "startDate" | "nextCancellation";
 
-export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
+export function DashboardTable({
+  subscriptions,
+  viewerId,
+  role,
+}: {
+  subscriptions: Row[];
+  viewerId: string;
+  role: Role;
+}) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("nextCancellation");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -160,7 +170,7 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
                       href={`/subscriptions/${sub.id}`}
                       className="text-orange-600 hover:underline"
                     >
-                      Bearbeiten
+                      {canWriteRow(role, viewerId, sub.created_by) ? "Bearbeiten" : "Ansehen"}
                     </Link>
                   </td>
                 </tr>

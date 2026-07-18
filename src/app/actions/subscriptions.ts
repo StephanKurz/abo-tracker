@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { parseGermanAmount } from "@/lib/subscriptions";
+import { canWriteAny, canWriteRow, getRoleForOwner } from "@/lib/sharing";
 import type { TablesInsert } from "@/types/database.types";
 
 function parseSubscriptionForm(formData: FormData) {
@@ -28,7 +29,7 @@ function parseSubscriptionForm(formData: FormData) {
   }
   if (!category_id) errors.push("Kategorie ist ein Pflichtfeld.");
 
-  const values: Omit<TablesInsert<"subscriptions">, "user_id"> = {
+  const values: Omit<TablesInsert<"subscriptions">, "user_id" | "created_by"> = {
     name,
     description: description || null,
     start_date: start_date || null,
@@ -48,15 +49,21 @@ export async function createSubscription(formData: FormData) {
   const { values, errors } = parseSubscriptionForm(formData);
   if (errors.length > 0) return { error: errors.join(" ") };
 
+  const overviewOwnerId = String(formData.get("overview_owner_id") ?? "").trim();
+  if (!overviewOwnerId) return { error: "Keine aktive Übersicht ausgewählt." };
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
 
+  const role = await getRoleForOwner(supabase, user, overviewOwnerId);
+  if (!role || !canWriteAny(role)) return { error: "Keine Berechtigung für diese Übersicht." };
+
   const { error } = await supabase
     .from("subscriptions")
-    .insert({ ...values, user_id: user.id });
+    .insert({ ...values, user_id: overviewOwnerId, created_by: user.id });
 
   if (error) return { error: error.message };
 
@@ -70,6 +77,23 @@ export async function updateSubscription(id: string, formData: FormData) {
   if (errors.length > 0) return { error: errors.join(" ") };
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const { data: existing } = await supabase
+    .from("subscriptions")
+    .select("user_id, created_by")
+    .eq("id", id)
+    .single();
+  if (!existing) return { error: "Abo nicht gefunden." };
+
+  const role = await getRoleForOwner(supabase, user, existing.user_id);
+  if (!role || !canWriteRow(role, user.id, existing.created_by)) {
+    return { error: "Keine Berechtigung, dieses Abo zu bearbeiten." };
+  }
+
   const { error } = await supabase.from("subscriptions").update(values).eq("id", id);
 
   if (error) return { error: error.message };
@@ -82,6 +106,23 @@ export async function updateSubscription(id: string, formData: FormData) {
 
 export async function deleteSubscription(id: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const { data: existing } = await supabase
+    .from("subscriptions")
+    .select("user_id, created_by")
+    .eq("id", id)
+    .single();
+  if (!existing) return { error: "Abo nicht gefunden." };
+
+  const role = await getRoleForOwner(supabase, user, existing.user_id);
+  if (!role || !canWriteRow(role, user.id, existing.created_by)) {
+    return { error: "Keine Berechtigung, dieses Abo zu löschen." };
+  }
+
   const { error } = await supabase.from("subscriptions").delete().eq("id", id);
   if (error) return { error: error.message };
 

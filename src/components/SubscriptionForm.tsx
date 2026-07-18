@@ -31,11 +31,15 @@ export function SubscriptionForm({
   initial,
   action,
   onDelete,
+  readOnly = false,
+  overviewOwnerId,
 }: {
   categories: Category[];
   initial?: Subscription;
-  action: (formData: FormData) => Promise<ActionResult>;
+  action?: (formData: FormData) => Promise<ActionResult>;
   onDelete?: () => Promise<ActionResult>;
+  readOnly?: boolean;
+  overviewOwnerId?: string;
 }) {
   const router = useRouter();
   const [startDate, setStartDate] = useState(initial?.start_date ?? "");
@@ -80,6 +84,7 @@ export function SubscriptionForm({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!action || readOnly) return;
     setError(null);
     setLoading(true);
     const formData = new FormData(e.currentTarget);
@@ -97,6 +102,14 @@ export function SubscriptionForm({
 
   return (
     <form onSubmit={handleSubmit} className={`${cardClass} space-y-2 p-4 sm:p-5`}>
+      {!initial && overviewOwnerId && (
+        <input type="hidden" name="overview_owner_id" value={overviewOwnerId} />
+      )}
+      {readOnly && (
+        <p className="inline-block rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">
+          Nur Lesen
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <FieldLabel required htmlFor="name">
@@ -107,6 +120,7 @@ export function SubscriptionForm({
             name="name"
             type="text"
             required
+            disabled={readOnly}
             defaultValue={initial?.name}
             className={inputClass}
           />
@@ -120,6 +134,7 @@ export function SubscriptionForm({
             id="category_id"
             name="category_id"
             required
+            disabled={readOnly}
             defaultValue={initial?.category_id ?? ""}
             className={inputClass}
           >
@@ -149,6 +164,7 @@ export function SubscriptionForm({
           id="description"
           name="description"
           rows={2}
+          disabled={readOnly}
           defaultValue={initial?.description ?? ""}
           className={textareaClass}
         />
@@ -161,6 +177,7 @@ export function SubscriptionForm({
             id="start_date"
             name="start_date"
             type="date"
+            disabled={readOnly}
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className={inputClass}
@@ -175,6 +192,7 @@ export function SubscriptionForm({
             id="billing_cycle"
             name="billing_cycle"
             required
+            disabled={readOnly}
             value={billingCycle}
             onChange={(e) => setBillingCycle(e.target.value)}
             className={inputClass}
@@ -191,6 +209,7 @@ export function SubscriptionForm({
             name="min_term_months"
             type="number"
             min={0}
+            disabled={readOnly}
             value={minTermMonths}
             onChange={(e) => setMinTermMonths(e.target.value)}
             className={inputClass}
@@ -218,6 +237,7 @@ export function SubscriptionForm({
             type="text"
             inputMode="decimal"
             required
+            disabled={readOnly}
             value={amount}
             onChange={(e) =>
               setAmount(e.target.value.replace(/[^0-9,]/g, "").replace(/(,.*),/g, "$1"))
@@ -247,6 +267,7 @@ export function SubscriptionForm({
           <select
             id="cancellation_mode"
             name="cancellation_mode"
+            disabled={readOnly}
             value={cancellationMode}
             onChange={(e) => setCancellationMode(e.target.value)}
             className={inputClass}
@@ -265,6 +286,7 @@ export function SubscriptionForm({
           <select
             id="notice_period"
             name="notice_period"
+            disabled={readOnly}
             value={noticePeriod}
             onChange={(e) => setNoticePeriod(e.target.value)}
             className={inputClass}
@@ -284,6 +306,7 @@ export function SubscriptionForm({
             id="canceled_at"
             name="canceled_at"
             type="date"
+            disabled={readOnly}
             value={canceledAt}
             onChange={(e) => setCanceledAt(e.target.value)}
             className={inputClass}
@@ -307,13 +330,15 @@ export function SubscriptionForm({
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={loading} className={buttonPrimaryClass}>
-          {loading ? "Wird gespeichert…" : "Speichern"}
-        </button>
+        {!readOnly && (
+          <button type="submit" disabled={loading} className={buttonPrimaryClass}>
+            {loading ? "Wird gespeichert…" : "Speichern"}
+          </button>
+        )}
         <button type="button" onClick={() => router.push("/dashboard")} className={buttonSecondaryClass}>
-          Abbrechen
+          {readOnly ? "Zurück" : "Abbrechen"}
         </button>
-        {onDelete && (
+        {!readOnly && onDelete && (
           <button
             type="button"
             onClick={handleDelete}
