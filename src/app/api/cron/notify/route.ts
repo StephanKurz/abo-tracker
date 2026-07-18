@@ -51,7 +51,7 @@ async function sendNotificationEmail(
       "Kündigungsfrist",
       sub.notice_period ? (NOTICE_PERIOD_LABELS[sub.notice_period] ?? sub.notice_period) : "–",
     ],
-    ["Nächstes Kündigungsdatum", formatDate(targetDate)],
+    ["Kündbar bis", formatDate(targetDate)],
   ];
 
   const html = `

@@ -121,7 +121,7 @@ export function DashboardTable({ subscriptions }: { subscriptions: Row[] }) {
                   onClick={() => toggleSort("nextCancellation")}
                   className="flex w-full items-center justify-end gap-1 whitespace-nowrap font-medium hover:text-orange-600"
                 >
-                  <span>Nächstes Kündigungsdatum</span>
+                  <span>Kündbar bis</span>
                   {sortColumn === "nextCancellation" && <span>{sortDir === "asc" ? "▲" : "▼"}</span>}
                 </button>
               </th>

@@ -96,19 +96,51 @@ export function SubscriptionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={`${cardClass} space-y-5`}>
-      <div>
-        <FieldLabel required htmlFor="name">
-          Name
-        </FieldLabel>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          defaultValue={initial?.name}
-          className={inputClass}
-        />
+    <form onSubmit={handleSubmit} className={`${cardClass} space-y-2 p-4 sm:p-5`}>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <FieldLabel required htmlFor="name">
+            Name
+          </FieldLabel>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            defaultValue={initial?.name}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="min-w-0">
+          <FieldLabel required htmlFor="category_id">
+            Kategorie
+          </FieldLabel>
+          <select
+            id="category_id"
+            name="category_id"
+            required
+            defaultValue={initial?.category_id ?? ""}
+            className={inputClass}
+          >
+            <option value="" disabled>
+              Bitte wählen…
+            </option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          {categories.length === 0 && (
+            <p className="mt-1 text-xs text-gray-500">
+              Noch keine Kategorien.{" "}
+              <Link href="/categories" className="text-orange-600 hover:underline">
+                Jetzt anlegen
+              </Link>
+            </p>
+          )}
+        </div>
       </div>
 
       <div>
@@ -116,13 +148,13 @@ export function SubscriptionForm({
         <textarea
           id="description"
           name="description"
-          rows={3}
+          rows={2}
           defaultValue={initial?.description ?? ""}
           className={textareaClass}
         />
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="min-w-0">
           <FieldLabel htmlFor="start_date">Abschlussdatum</FieldLabel>
           <input
@@ -211,36 +243,6 @@ export function SubscriptionForm({
         </div>
 
         <div className="min-w-0">
-          <FieldLabel required htmlFor="category_id">
-            Kategorie
-          </FieldLabel>
-          <select
-            id="category_id"
-            name="category_id"
-            required
-            defaultValue={initial?.category_id ?? ""}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              Bitte wählen…
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          {categories.length === 0 && (
-            <p className="mt-1 text-xs text-gray-500">
-              Noch keine Kategorien.{" "}
-              <Link href="/categories" className="text-orange-600 hover:underline">
-                Jetzt anlegen
-              </Link>
-            </p>
-          )}
-        </div>
-
-        <div className="min-w-0">
           <FieldLabel htmlFor="cancellation_mode">Kündigungsmodus</FieldLabel>
           <select
             id="cancellation_mode"
@@ -290,7 +292,7 @@ export function SubscriptionForm({
 
         <div className="min-w-0">
           <FieldLabel>
-            {canceledAt ? "Vertragsende" : "Nächstes Kündigungsdatum"}
+            {canceledAt ? "Vertragsende" : "Kündbar bis"}
           </FieldLabel>
           <input
             type="text"
