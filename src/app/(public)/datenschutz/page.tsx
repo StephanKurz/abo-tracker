@@ -32,7 +32,7 @@ export default function DatenschutzPage() {
       </section>
 
       <Link href="/login" className="text-orange-600 hover:underline">
-        Zurück zur Anmeldung
+        Zurück
       </Link>
     </div>
   );
