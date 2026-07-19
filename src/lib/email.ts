@@ -12,7 +12,7 @@ export function createTransporter() {
   });
 }
 
-export async function sendMail(opts: { to: string; subject: string; html: string }) {
+export async function sendMail(opts: { to: string; subject: string; html: string; text?: string }) {
   const transporter = createTransporter();
   const info = await transporter.sendMail({ from: process.env.SMTP_FROM, ...opts });
   return {
