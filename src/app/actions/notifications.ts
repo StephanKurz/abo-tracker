@@ -7,10 +7,7 @@ import {
   type SubscriptionWithCategory,
 } from "@/lib/notifications";
 
-export async function sendTestNotificationEmail(): Promise<{
-  error: string | null;
-  detail?: string;
-}> {
+export async function sendTestNotificationEmail(): Promise<{ error: string | null }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -36,12 +33,8 @@ export async function sendTestNotificationEmail(): Promise<{
   }
 
   try {
-    const info = await sendCancellationReminderEmail(profile, nearest.sub, nearest.date);
-    const detail =
-      info.rejected.length > 0
-        ? `Vom Mailserver abgelehnt: ${info.rejected.join(", ")} — Antwort: ${info.response}`
-        : `Angenommen für: ${info.accepted.join(", ")} — Antwort: ${info.response}`;
-    return { error: null, detail };
+    await sendCancellationReminderEmail(profile, nearest.sub, nearest.date);
+    return { error: null };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "E-Mail-Versand fehlgeschlagen." };
   }

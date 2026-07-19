@@ -109,7 +109,7 @@ export function AccountForm({
     if (result.error) {
       setTestMailError(result.error);
     } else {
-      setTestMailInfo(`Testmail wurde versendet. ${result.detail ?? ""}`);
+      setTestMailInfo("Testmail wurde versendet.");
     }
   }
 
