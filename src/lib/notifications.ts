@@ -65,9 +65,20 @@ export async function sendCancellationReminderEmail(
     </table>
   `;
 
+  const text = [
+    `Kündigungserinnerung: ${sub.name}`,
+    "",
+    `Hallo ${profile.name},`,
+    "",
+    `für dein Abo ${sub.name} ist am ${formatDate(targetDate)} das nächste Kündigungsdatum.`,
+    "",
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+  ].join("\n");
+
   return sendMail({
     to: profile.email,
     subject: `Kündigungserinnerung: ${sub.name}`,
     html,
+    text,
   });
 }

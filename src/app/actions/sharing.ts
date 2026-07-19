@@ -105,6 +105,10 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
   const permissionLabel = PERMISSION_LABELS[permission as Role] ?? permission;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
+  const accountHint = hasAccount
+    ? "Logg dich ein und nimm die Einladung unter „Mein Konto” an."
+    : `Du hast noch kein Konto? Registriere dich mit genau dieser E-Mail-Adresse (${email}), die Einladung erscheint danach automatisch unter „Mein Konto”.`;
+
   try {
     await sendMail({
       to: email,
@@ -113,14 +117,17 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
         <p>Hallo,</p>
         <p><strong>${ownerName}</strong> hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Tracker
         mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.</p>
-        ${
-          hasAccount
-            ? `<p>Logg dich ein und nimm die Einladung unter „Mein Konto” an.</p>`
-            : `<p>Du hast noch kein Konto? Registriere dich mit genau dieser E-Mail-Adresse (${email}),
-               die Einladung erscheint danach automatisch unter „Mein Konto”.</p>`
-        }
+        <p>${accountHint}</p>
         ${appUrl ? `<p><a href="${appUrl}/account">Zum Abo-Tracker</a></p>` : ""}
       `,
+      text: [
+        `${ownerName} hat dich zum Abo-Tracker eingeladen`,
+        "",
+        `${ownerName} hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Tracker mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.`,
+        "",
+        accountHint,
+        ...(appUrl ? ["", `${appUrl}/account`] : []),
+      ].join("\n"),
     });
   } catch {
     // Einladung ist bereits gespeichert; E-Mail-Zustellung ist best-effort
