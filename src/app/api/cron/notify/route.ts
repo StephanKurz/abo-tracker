@@ -1,66 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendMail } from "@/lib/email";
 import {
-  BILLING_CYCLE_LABELS,
-  CANCELLATION_MODE_LABELS,
-  NOTICE_PERIOD_LABELS,
-  formatCurrency,
-  formatDate,
-  getEffectiveCancellationDate,
-} from "@/lib/subscriptions";
-import type { Subscription } from "@/lib/subscriptions";
+  findNearestCancellation,
+  sendCancellationReminderEmail,
+  type SubscriptionWithCategory,
+} from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-type SubscriptionWithCategory = Subscription & { categories: { name: string } | null };
-
-async function sendNotificationEmail(
-  profile: { name: string; email: string },
-  sub: SubscriptionWithCategory,
-  targetDate: Date,
-) {
-  const rows: [string, string][] = [
-    ["Name", sub.name],
-    ["Beschreibung", sub.description ?? "–"],
-    ["Kategorie", sub.categories?.name ?? "–"],
-    ["Abschlussdatum", formatDate(sub.start_date)],
-    ["Abrechnung", BILLING_CYCLE_LABELS[sub.billing_cycle] ?? sub.billing_cycle],
-    ["Mindestlaufzeit", sub.min_term_months != null ? `${sub.min_term_months} Monate` : "–"],
-    ["Betrag pro Abrechnungseinheit", formatCurrency(sub.amount)],
-    ["Jahreskosten", formatCurrency(sub.yearly_cost)],
-    [
-      "Kündigungsmodus",
-      sub.cancellation_mode ? (CANCELLATION_MODE_LABELS[sub.cancellation_mode] ?? sub.cancellation_mode) : "–",
-    ],
-    [
-      "Kündigungsfrist",
-      sub.notice_period ? (NOTICE_PERIOD_LABELS[sub.notice_period] ?? sub.notice_period) : "–",
-    ],
-    ["Kündbar bis", formatDate(targetDate)],
-  ];
-
-  const html = `
-    <h2>Kündigungserinnerung: ${sub.name}</h2>
-    <p>Hallo ${profile.name},</p>
-    <p>für dein Abo <strong>${sub.name}</strong> ist am <strong>${formatDate(targetDate)}</strong> das nächste Kündigungsdatum.</p>
-    <table cellpadding="4" cellspacing="0" style="border-collapse:collapse">
-      ${rows
-        .map(
-          ([label, value]) =>
-            `<tr><td style="color:#6b7280;padding-right:12px">${label}</td><td>${value}</td></tr>`,
-        )
-        .join("")}
-    </table>
-  `;
-
-  await sendMail({
-    to: profile.email,
-    subject: `Kündigungserinnerung: ${sub.name}`,
-    html,
-  });
-}
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -94,15 +41,7 @@ export async function GET(request: Request) {
 
     if (!subscriptions || subscriptions.length === 0) continue;
 
-    let nearest: { sub: SubscriptionWithCategory; date: Date } | null = null;
-    for (const sub of subscriptions as SubscriptionWithCategory[]) {
-      const date = getEffectiveCancellationDate(sub);
-      if (!date || date.getTime() < today.getTime()) continue;
-      if (!nearest || date.getTime() < nearest.date.getTime()) {
-        nearest = { sub, date };
-      }
-    }
-
+    const nearest = findNearestCancellation(subscriptions as SubscriptionWithCategory[], today);
     if (!nearest) continue;
 
     const daysUntil = Math.round((nearest.date.getTime() - today.getTime()) / 86_400_000);
@@ -117,7 +56,7 @@ export async function GET(request: Request) {
     }
 
     try {
-      await sendNotificationEmail(profile, nearest.sub, nearest.date);
+      await sendCancellationReminderEmail(profile, nearest.sub, nearest.date);
       await supabase
         .from("profiles")
         .update({
