@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AccountForm } from "@/components/AccountForm";
+import { RatingCard } from "@/components/RatingCard";
 import { ShareAccessCard } from "@/components/ShareAccessCard";
 import { MyInvitesCard } from "@/components/MyInvitesCard";
 import type { CollaboratorStatus, InvitePermission } from "@/lib/sharing";
@@ -71,15 +72,19 @@ export default async function AccountPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Mein Konto</h1>
-      <div className="columns-1 gap-4 sm:columns-2">
-        <AccountForm
-          name={profile?.name ?? ""}
-          email={profile?.email ?? user.email ?? ""}
-          notifyDaysBefore={profile?.notify_days_before ?? null}
-          rating={ownRating?.is_positive ?? null}
-        />
-        <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
-        <MyInvitesCard invites={incomingInvites} />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="flex flex-1 flex-col gap-4">
+          <AccountForm
+            name={profile?.name ?? ""}
+            email={profile?.email ?? user.email ?? ""}
+            notifyDaysBefore={profile?.notify_days_before ?? null}
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-4">
+          <RatingCard rating={ownRating?.is_positive ?? null} />
+          <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
+          <MyInvitesCard invites={incomingInvites} />
+        </div>
       </div>
     </div>
   );
