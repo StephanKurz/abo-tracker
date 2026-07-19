@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import { RecommendWidget } from "@/components/RecommendWidget";
 import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { isEmail } from "@/lib/validation";
 
@@ -55,7 +57,8 @@ export default function LoginPage() {
   }
 
   return (
-      <div className={`${cardClass} w-full max-w-md`}>
+    <div className="w-full max-w-md space-y-4">
+      <div className={cardClass}>
         <h1 className="mb-6 text-2xl font-bold text-gray-900">Anmelden</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -76,13 +79,11 @@ export default function LoginPage() {
             <FieldLabel required htmlFor="password">
               Passwort
             </FieldLabel>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
             />
           </div>
 
@@ -102,5 +103,10 @@ export default function LoginPage() {
           </Link>
         </div>
       </div>
+
+      <div className={cardClass}>
+        <RecommendWidget />
+      </div>
+    </div>
   );
 }

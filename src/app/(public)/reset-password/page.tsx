@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
-import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import { buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { PASSWORD_RULES, isPasswordValid } from "@/lib/validation";
 
 function ResetPasswordForm() {
@@ -64,14 +65,12 @@ function ResetPasswordForm() {
             <FieldLabel required htmlFor="password">
               Neues Passwort
             </FieldLabel>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               required
               disabled={!ready}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
             />
             <ul className="mt-2 space-y-0.5 text-xs">
               {PASSWORD_RULES.map((rule) => {
@@ -89,14 +88,12 @@ function ResetPasswordForm() {
             <FieldLabel required htmlFor="password_confirm">
               Neues Passwort bestätigen
             </FieldLabel>
-            <input
+            <PasswordInput
               id="password_confirm"
-              type="password"
               required
               disabled={!ready}
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}
-              className={inputClass}
             />
           </div>
 

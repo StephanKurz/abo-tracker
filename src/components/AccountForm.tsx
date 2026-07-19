@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { updateProfileName, updateNotificationSettings } from "@/app/actions/profile";
 import { sendTestNotificationEmail } from "@/app/actions/notifications";
 import { FieldLabel } from "@/components/ui/FieldLabel";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { inputClass, buttonPrimaryClass, buttonSecondaryClass, cardClass } from "@/components/ui/formStyles";
 import { PASSWORD_RULES, isPasswordValid } from "@/lib/validation";
 
@@ -159,13 +160,11 @@ export function AccountForm({
           <FieldLabel required htmlFor="new_password">
             Neues Passwort
           </FieldLabel>
-          <input
+          <PasswordInput
             id="new_password"
-            type="password"
             required
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className={inputClass}
           />
           <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
             {PASSWORD_RULES.map((rule) => {
@@ -183,13 +182,11 @@ export function AccountForm({
           <FieldLabel required htmlFor="new_password_confirm">
             Neues Passwort bestätigen
           </FieldLabel>
-          <input
+          <PasswordInput
             id="new_password_confirm"
-            type="password"
             required
             value={newPasswordConfirm}
             onChange={(e) => setNewPasswordConfirm(e.target.value)}
-            className={inputClass}
           />
         </div>
 

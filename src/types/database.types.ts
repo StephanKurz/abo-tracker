@@ -264,6 +264,10 @@ export type Database = {
         Args: { p_email: string }
         Returns: { found: boolean; name: string | null }[]
       }
+      get_invite_owner_names: {
+        Args: { p_owner_ids: string[] }
+        Returns: { id: string; name: string }[]
+      }
     }
     Enums: {
       [_ in never]: never

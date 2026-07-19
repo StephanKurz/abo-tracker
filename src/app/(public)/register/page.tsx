@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FieldLabel } from "@/components/ui/FieldLabel";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { inputClass, buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { PASSWORD_RULES, isPasswordValid } from "@/lib/validation";
 
@@ -84,13 +85,11 @@ export default function RegisterPage() {
             <FieldLabel required htmlFor="password">
               Passwort
             </FieldLabel>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
             />
             <ul className="mt-2 space-y-0.5 text-xs">
               {PASSWORD_RULES.map((rule) => {
@@ -111,13 +110,11 @@ export default function RegisterPage() {
             <FieldLabel required htmlFor="password_confirm">
               Passwort bestätigen
             </FieldLabel>
-            <input
+            <PasswordInput
               id="password_confirm"
-              type="password"
               required
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}
-              className={inputClass}
             />
           </div>
 
