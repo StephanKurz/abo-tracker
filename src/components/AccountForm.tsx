@@ -117,7 +117,7 @@ export function AccountForm({
     if (result.error) {
       setTestMailError(result.error);
     } else {
-      setTestMailInfo("Testmail wurde versendet.");
+      setTestMailInfo(`Testmail wurde versendet. ${result.detail ?? ""}`);
     }
   }
 
@@ -130,8 +130,11 @@ export function AccountForm({
   }
 
   return (
-    <div className="grid items-start gap-4 sm:grid-cols-2">
-      <form onSubmit={handleNameSubmit} className={`${cardClass} space-y-3 p-4 sm:p-5`}>
+    <>
+      <form
+        onSubmit={handleNameSubmit}
+        className={`${cardClass} mb-4 space-y-3 break-inside-avoid p-4 sm:p-5`}
+      >
         <h2 className="text-lg font-semibold text-gray-900">Profil</h2>
 
         <div>
@@ -162,7 +165,10 @@ export function AccountForm({
         </button>
       </form>
 
-      <form onSubmit={handlePasswordSubmit} className={`${cardClass} space-y-3 p-4 sm:p-5`}>
+      <form
+        onSubmit={handlePasswordSubmit}
+        className={`${cardClass} mb-4 space-y-3 break-inside-avoid p-4 sm:p-5`}
+      >
         <h2 className="text-lg font-semibold text-gray-900">Passwort ändern</h2>
 
         <div>
@@ -211,7 +217,10 @@ export function AccountForm({
         </button>
       </form>
 
-      <form onSubmit={handleNotifySubmit} className={`${cardClass} space-y-3 p-4 sm:p-5`}>
+      <form
+        onSubmit={handleNotifySubmit}
+        className={`${cardClass} mb-4 space-y-3 break-inside-avoid p-4 sm:p-5`}
+      >
         <h2 className="text-lg font-semibold text-gray-900">Benachrichtigungen</h2>
         <p className="text-sm text-gray-600">
           Wir ermitteln automatisch das nächstgelegene Kündigungsdatum unter all deinen Abos und
@@ -252,7 +261,7 @@ export function AccountForm({
         {testMailInfo && <p className="text-sm text-green-700">{testMailInfo}</p>}
       </form>
 
-      <div className={`${cardClass} space-y-3 p-4 sm:p-5`}>
+      <div className={`${cardClass} mb-4 space-y-3 break-inside-avoid p-4 sm:p-5`}>
         <h2 className="text-lg font-semibold text-gray-900">Deine Bewertung</h2>
         <p className="text-sm text-gray-600">
           {ratingValue == null
@@ -289,6 +298,6 @@ export function AccountForm({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
