@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AccountForm } from "@/components/AccountForm";
 import { RatingCard } from "@/components/RatingCard";
+import { FeedbackCard } from "@/components/FeedbackCard";
 import { ShareAccessCard } from "@/components/ShareAccessCard";
 import { MyInvitesCard } from "@/components/MyInvitesCard";
 import type { CollaboratorStatus, InvitePermission } from "@/lib/sharing";
@@ -16,11 +17,23 @@ export default async function AccountPage() {
     redirect("/login");
   }
 
-  const [{ data: profile }, { data: ownRating }, { data: ownOverview }] = await Promise.all([
-    supabase.from("profiles").select("name, email, notify_days_before").eq("id", user.id).single(),
-    supabase.from("app_ratings").select("is_positive").eq("user_id", user.id).maybeSingle(),
-    supabase.from("overviews").select("owner_id").eq("owner_id", user.id).maybeSingle(),
-  ]);
+  const [{ data: profile }, { data: ownRating }, { data: ownOverview }, { data: feedbackRaw }] =
+    await Promise.all([
+      supabase.from("profiles").select("name, email, notify_days_before").eq("id", user.id).single(),
+      supabase.from("app_ratings").select("is_positive").eq("user_id", user.id).maybeSingle(),
+      supabase.from("overviews").select("owner_id").eq("owner_id", user.id).maybeSingle(),
+      supabase
+        .from("feedback")
+        .select("id, text, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+  const feedbackEntries = (feedbackRaw ?? []).map((f) => ({
+    id: f.id,
+    text: f.text,
+    createdAt: f.created_at,
+  }));
 
   const [{ data: outgoingRaw }, { data: incomingRaw }] = await Promise.all([
     ownOverview
@@ -82,6 +95,7 @@ export default async function AccountPage() {
         </div>
         <div className="flex flex-1 flex-col gap-4">
           <RatingCard rating={ownRating?.is_positive ?? null} />
+          <FeedbackCard entries={feedbackEntries} />
           <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
           <MyInvitesCard invites={incomingInvites} />
         </div>
