@@ -183,7 +183,7 @@ export function AccountForm({
             onChange={(e) => setNewPassword(e.target.value)}
             className={inputClass}
           />
-          <ul className="mt-2 space-y-0.5 text-xs">
+          <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
             {PASSWORD_RULES.map((rule) => {
               const ok = rule.test(newPassword);
               return (
