@@ -45,8 +45,9 @@ export function MyInvitesCard({ invites }: { invites: InviteRow[] }) {
           <ul className="divide-y divide-gray-200">
             {pending.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center gap-3 py-3">
-                <span className="flex-1 text-gray-900">
-                  {i.ownerName} — {PERMISSION_LABELS[i.permission]}
+                <span className="flex-1">
+                  <span className="block text-gray-900">Aboverwaltung {i.ownerName}</span>
+                  <span className="block text-xs text-gray-500">{PERMISSION_LABELS[i.permission]}</span>
                 </span>
                 <button
                   disabled={loadingId === i.id}
@@ -74,8 +75,9 @@ export function MyInvitesCard({ invites }: { invites: InviteRow[] }) {
           <ul className="divide-y divide-gray-200">
             {active.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center gap-3 py-3">
-                <span className="flex-1 text-gray-900">
-                  {i.ownerName} — {PERMISSION_LABELS[i.permission]}
+                <span className="flex-1">
+                  <span className="block text-gray-900">Aboverwaltung {i.ownerName}</span>
+                  <span className="block text-xs text-gray-500">{PERMISSION_LABELS[i.permission]}</span>
                 </span>
                 <button
                   disabled={loadingId === i.id}

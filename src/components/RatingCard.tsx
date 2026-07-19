@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { submitRating } from "@/app/actions/rating";
+import { RecommendWidget } from "@/components/RecommendWidget";
 import { buttonPrimaryClass, buttonSecondaryClass, cardClass } from "@/components/ui/formStyles";
 
 export function RatingCard({ rating }: { rating: boolean | null }) {
@@ -51,6 +52,12 @@ export function RatingCard({ rating }: { rating: boolean | null }) {
           <span className="text-gray-400">★</span> Taugt nix
         </button>
       </div>
+
+      {ratingValue === true && (
+        <div className="border-t border-gray-200 pt-3">
+          <RecommendWidget />
+        </div>
+      )}
     </div>
   );
 }

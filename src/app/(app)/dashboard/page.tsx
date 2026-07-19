@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardTable } from "@/components/DashboardTable";
 import { CreateOverviewCard } from "@/components/CreateOverviewCard";
-import { buttonPrimaryClass } from "@/components/ui/formStyles";
+import { buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { resolveActiveOverview } from "@/lib/activeOverview";
+import { countPendingInvites } from "@/lib/sharing";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -13,10 +14,31 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { active } = await resolveActiveOverview(supabase, user);
+  const [{ active }, pendingInviteCount] = await Promise.all([
+    resolveActiveOverview(supabase, user),
+    countPendingInvites(supabase, user),
+  ]);
+
+  const inviteBanner = pendingInviteCount > 0 && (
+    <div className={`${cardClass} flex flex-wrap items-center justify-between gap-3 p-4`}>
+      <p className="text-sm text-gray-700">
+        {pendingInviteCount === 1
+          ? "Du hast eine ausstehende Einladung."
+          : `Du hast ${pendingInviteCount} ausstehende Einladungen.`}
+      </p>
+      <Link href="/account" className="text-sm font-semibold text-orange-600 hover:underline">
+        Zu Mein Konto
+      </Link>
+    </div>
+  );
 
   if (!active) {
-    return <CreateOverviewCard />;
+    return (
+      <div className="space-y-4">
+        {inviteBanner}
+        <CreateOverviewCard />
+      </div>
+    );
   }
 
   const { data: subscriptions } = await supabase
@@ -50,6 +72,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-4">
+      {inviteBanner}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Abo-Übersicht</h1>
         {canCreate && (

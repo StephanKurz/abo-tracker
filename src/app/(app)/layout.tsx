@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { claimPendingInvitesForCurrentUser, resolveActiveOverview } from "@/lib/activeOverview";
+import { countPendingInvites } from "@/lib/sharing";
 
 export default async function AppLayout({
   children,
@@ -27,17 +28,13 @@ export default async function AppLayout({
     { data: ratingStats },
     { data: ownRating },
     { overviews, active },
-    { count: pendingInviteCount },
+    pendingInviteCount,
   ] = await Promise.all([
     supabase.from("profiles").select("name").eq("id", user.id).single(),
     supabase.rpc("get_rating_stats").single(),
     supabase.from("app_ratings").select("is_positive").eq("user_id", user.id).maybeSingle(),
     resolveActiveOverview(supabase, user),
-    supabase
-      .from("overview_collaborators")
-      .select("id", { count: "exact", head: true })
-      .eq("collaborator_id", user.id)
-      .eq("status", "pending"),
+    countPendingInvites(supabase, user),
   ]);
 
   const ratingPercentage =
@@ -53,7 +50,7 @@ export default async function AppLayout({
         hasRated={ownRating != null}
         overviews={overviews}
         activeOwnerId={active?.ownerId ?? null}
-        pendingInviteCount={pendingInviteCount ?? 0}
+        pendingInviteCount={pendingInviteCount}
       />
       <main className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-4 py-6 print:overflow-visible">
         {children}

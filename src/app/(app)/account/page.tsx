@@ -57,13 +57,23 @@ export default async function AccountPage() {
   const collaboratorIds = outgoing
     .map((o) => o.collaborator_id)
     .filter((id): id is string => id != null);
-  const ownerIds = incoming.map((i) => i.overview_owner_id);
-  const profileIds = [...new Set([...collaboratorIds, ...ownerIds])];
+  const ownerIds = [...new Set(incoming.map((i) => i.overview_owner_id))];
 
   const names = new Map<string, string>();
-  if (profileIds.length > 0) {
-    const { data: profiles } = await supabase.from("profiles").select("id, name").in("id", profileIds);
+  if (collaboratorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, name")
+      .in("id", collaboratorIds);
     for (const p of profiles ?? []) names.set(p.id, p.name);
+  }
+
+  const ownerNames = new Map<string, string>();
+  if (ownerIds.length > 0) {
+    const { data: owners } = await supabase.rpc("get_invite_owner_names", {
+      p_owner_ids: ownerIds,
+    });
+    for (const o of owners ?? []) ownerNames.set(o.id, o.name);
   }
 
   const outgoingCollaborators = outgoing.map((o) => ({
@@ -77,7 +87,7 @@ export default async function AccountPage() {
 
   const incomingInvites = incoming.map((i) => ({
     id: i.id,
-    ownerName: names.get(i.overview_owner_id) ?? "Unbekannt",
+    ownerName: ownerNames.get(i.overview_owner_id) ?? "Unbekannt",
     permission: i.permission as InvitePermission,
     status: i.status as "pending" | "accepted",
   }));

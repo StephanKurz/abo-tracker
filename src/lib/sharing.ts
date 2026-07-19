@@ -92,6 +92,15 @@ export async function listOverviewOptions(
   return overviews;
 }
 
+export async function countPendingInvites(supabase: Client, user: User): Promise<number> {
+  const { count } = await supabase
+    .from("overview_collaborators")
+    .select("id", { count: "exact", head: true })
+    .eq("collaborator_id", user.id)
+    .eq("status", "pending");
+  return count ?? 0;
+}
+
 export async function getRoleForOwner(
   supabase: Client,
   user: User,
