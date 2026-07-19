@@ -12,7 +12,13 @@ export function createTransporter() {
   });
 }
 
-export async function sendMail(opts: { to: string; subject: string; html: string; text?: string }) {
+export async function sendMail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  replyTo?: string;
+}) {
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   if (!from) {
     throw new Error("SMTP_FROM oder SMTP_USER muss als Umgebungsvariable gesetzt sein.");
