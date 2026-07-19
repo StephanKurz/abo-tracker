@@ -96,7 +96,7 @@ export function ShareAccessCard({
   }
 
   return (
-    <div className={`${cardClass} mb-4 space-y-3 break-inside-avoid p-4 sm:p-5`}>
+    <div className={`${cardClass} space-y-3 p-4 sm:p-5`}>
       <h2 className="text-lg font-semibold text-gray-900">Zugriff teilen</h2>
       <p className="text-sm text-gray-600">
         Lade eine andere Person ein, deine Abo-Übersicht einzusehen oder zu bearbeiten.
