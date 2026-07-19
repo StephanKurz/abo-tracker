@@ -12,7 +12,7 @@ export function SiteFooter() {
           Impressum
         </Link>
       </div>
-      <p className="mt-1">© Kurz Intelligence - Reutlingen</p>
+      <p className="mt-1">© Kurz Intelligence - Reutlingen · Version 0.7</p>
     </footer>
   );
 }
