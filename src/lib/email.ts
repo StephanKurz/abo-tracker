@@ -12,6 +12,9 @@ export function createTransporter() {
   });
 }
 
+const SIGNATURE_HTML = `<p>Abo-Tracker<br>Ein kostenloser Service von<br>Kurz Intelligence</p>`;
+const SIGNATURE_TEXT = `\n\nAbo-Tracker\nEin kostenloser Service von\nKurz Intelligence`;
+
 export async function sendMail(opts: {
   to: string;
   subject: string;
@@ -24,7 +27,12 @@ export async function sendMail(opts: {
     throw new Error("SMTP_FROM oder SMTP_USER muss als Umgebungsvariable gesetzt sein.");
   }
   const transporter = createTransporter();
-  const info = await transporter.sendMail({ from, ...opts });
+  const info = await transporter.sendMail({
+    from,
+    ...opts,
+    html: opts.html + SIGNATURE_HTML,
+    text: opts.text ? opts.text + SIGNATURE_TEXT : undefined,
+  });
   return {
     accepted: info.accepted.map(String),
     rejected: info.rejected.map(String),

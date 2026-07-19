@@ -108,6 +108,8 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
   const accountHint = hasAccount
     ? "Logg dich ein und nimm die Einladung unter „Mein Konto” an."
     : `Du hast noch kein Konto? Registriere dich mit genau dieser E-Mail-Adresse (${email}), die Einladung erscheint danach automatisch unter „Mein Konto”.`;
+  const actionPath = hasAccount ? "/login" : "/register";
+  const actionLabel = hasAccount ? "Jetzt einloggen" : "Jetzt registrieren";
 
   try {
     await sendMail({
@@ -118,7 +120,7 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
         <p><strong>${ownerName}</strong> hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Tracker
         mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.</p>
         <p>${accountHint}</p>
-        ${appUrl ? `<p><a href="${appUrl}/account">Zum Abo-Tracker</a></p>` : ""}
+        ${appUrl ? `<p><a href="${appUrl}${actionPath}">${actionLabel}</a></p>` : ""}
       `,
       text: [
         `${ownerName} hat dich zum Abo-Tracker eingeladen`,
@@ -126,7 +128,7 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
         `${ownerName} hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Tracker mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.`,
         "",
         accountHint,
-        ...(appUrl ? ["", `${appUrl}/account`] : []),
+        ...(appUrl ? ["", `${actionLabel}: ${appUrl}${actionPath}`] : []),
       ].join("\n"),
     });
   } catch {
