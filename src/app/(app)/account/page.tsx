@@ -71,13 +71,13 @@ export default async function AccountPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Mein Konto</h1>
-      <AccountForm
-        name={profile?.name ?? ""}
-        email={profile?.email ?? user.email ?? ""}
-        notifyDaysBefore={profile?.notify_days_before ?? null}
-        rating={ownRating?.is_positive ?? null}
-      />
-      <div className="grid items-start gap-4 sm:grid-cols-2">
+      <div className="columns-1 gap-4 sm:columns-2">
+        <AccountForm
+          name={profile?.name ?? ""}
+          email={profile?.email ?? user.email ?? ""}
+          notifyDaysBefore={profile?.notify_days_before ?? null}
+          rating={ownRating?.is_positive ?? null}
+        />
         <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
         <MyInvitesCard invites={incomingInvites} />
       </div>

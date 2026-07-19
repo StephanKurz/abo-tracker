@@ -14,5 +14,10 @@ export function createTransporter() {
 
 export async function sendMail(opts: { to: string; subject: string; html: string }) {
   const transporter = createTransporter();
-  await transporter.sendMail({ from: process.env.SMTP_FROM, ...opts });
+  const info = await transporter.sendMail({ from: process.env.SMTP_FROM, ...opts });
+  return {
+    accepted: info.accepted.map(String),
+    rejected: info.rejected.map(String),
+    response: info.response,
+  };
 }

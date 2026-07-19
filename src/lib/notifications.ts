@@ -65,7 +65,7 @@ export async function sendCancellationReminderEmail(
     </table>
   `;
 
-  await sendMail({
+  return sendMail({
     to: profile.email,
     subject: `Kündigungserinnerung: ${sub.name}`,
     html,
