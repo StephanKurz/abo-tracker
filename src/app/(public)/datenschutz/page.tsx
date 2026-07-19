@@ -19,7 +19,8 @@ export default function DatenschutzPage() {
           Abo-, Kategorie- und Profildaten sind durch Datenbankregeln (Row Level Security)
           grundsätzlich ausschließlich für den jeweils angemeldeten Benutzer selbst einsehbar und
           bearbeitbar. Nach der Registrierung wird zunächst keine Abo-Übersicht angelegt — das
-          entscheidest du selbst.
+          entscheidest du selbst. Es gibt keinen zentralen Administrator des Abo-Trackers, der in
+          irgendeiner Form Zugriff auf diese Daten hätte.
         </p>
         <p className="text-gray-700">
           Über die Funktion „Zugriff teilen” in „Mein Konto” kannst du eine andere, bereits
