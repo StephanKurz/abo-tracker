@@ -19,6 +19,9 @@ export type CheckinFields = {
   canceled_at?: string | null;
 };
 
+/** Kündigungsfelder, die die KI aus Anbieter-Wissen statt aus der Mail füllen darf. */
+export type ResearchedField = "cancellation_mode" | "notice_period";
+
 export type CheckinExtraction = {
   action: "create" | "update" | "unclear" | "reject" | "status";
   subscription_id: string | null;
@@ -26,6 +29,10 @@ export type CheckinExtraction = {
   category: string | null;
   questions: string[];
   summary: string;
+  /** Felder, die nicht aus der Mail stammen, sondern recherchiert wurden. */
+  researched_fields: ResearchedField[];
+  /** Hinweis, wenn Angaben in der Mail von den üblichen Anbieter-Bedingungen abweichen. */
+  knowledge_note: string | null;
 };
 
 const SYSTEM_PROMPT = `Du bist der Extraktions-Assistent von "Abo-Radar", einer Abo-Verwaltung.
@@ -71,8 +78,21 @@ Feldformate:
   Kategoriename auf Deutsch (z.B. "Streaming"), oder null wenn unklar.
 - summary: 1-2 deutsche Sätze, was du erkannt hast (wird dem Nutzer per Mail geschickt).
 
+Kündigungsmodus und Kündigungsfrist recherchieren:
+- Steht in der Mail nichts zu cancellation_mode oder notice_period, der Anbieter ist aber
+  allgemein bekannt (z.B. Netflix, Spotify, Amazon Prime, Disney+), dann fülle die Felder
+  aus deinem Wissen über die üblichen Vertragsbedingungen dieses Anbieters und führe die
+  so ergänzten Feldnamen in "researched_fields" auf. Bist du dir bei einem Anbieter nicht
+  sicher, lasse das Feld null und führe es NICHT in researched_fields auf.
+- Widerspricht eine Angabe in der Mail deinem Wissen über die üblichen Bedingungen des
+  Anbieters, übernimm die Angabe AUS DER MAIL in fields und beschreibe die Abweichung kurz
+  in "knowledge_note" (1-2 deutsche Sätze), z.B. "In der Mail steht eine Kündigungsfrist
+  von 3 Monaten, Netflix ist üblicherweise aber jederzeit monatlich kündbar."
+- Gibt es nichts zu recherchieren und keine Abweichung: researched_fields leer lassen und
+  knowledge_note auf null setzen.
+
 Antworte AUSSCHLIESSLICH mit einem JSON-Objekt exakt dieser Form, ohne Markdown:
-{"action":"create|update|unclear|reject|status","subscription_id":"...oder null","fields":{...},"category":"...oder null","questions":["..."],"summary":"..."}`;
+{"action":"create|update|unclear|reject|status","subscription_id":"...oder null","fields":{...},"category":"...oder null","questions":["..."],"summary":"...","researched_fields":["cancellation_mode","notice_period"],"knowledge_note":"...oder null"}`;
 
 export async function extractSubscriptionFromEmail(input: {
   mailSubject: string;
@@ -238,6 +258,19 @@ export function validateExtraction(
     }
   }
 
+  // Recherchierte Felder nur anerkennen, wenn das jeweilige Feld auch gesetzt ist
+  const researchedFields = Array.isArray(obj.researched_fields)
+    ? Array.from(
+        new Set(
+          obj.researched_fields.filter(
+            (f): f is ResearchedField =>
+              (f === "cancellation_mode" && fields.cancellation_mode != null) ||
+              (f === "notice_period" && fields.notice_period != null),
+          ),
+        ),
+      )
+    : [];
+
   return {
     action,
     subscription_id: subscriptionId,
@@ -245,5 +278,7 @@ export function validateExtraction(
     category: asString(obj.category, 100),
     questions,
     summary: asString(obj.summary, 1000) ?? "",
+    researched_fields: researchedFields,
+    knowledge_note: asString(obj.knowledge_note, 500),
   };
 }
