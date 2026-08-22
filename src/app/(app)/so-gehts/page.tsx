@@ -1,17 +1,32 @@
 import Link from "next/link";
 
+function Section({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg bg-white p-6 shadow-md">
+      <div className="flex gap-4">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-600 font-bold text-white">
+          {number}
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SoGehtsPage() {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">So geht&apos;s</h1>
-      <p className="text-gray-700">
-        Diese kurze Anleitung zeigt dir alles Wichtige rund um Abo-Radar.
-      </p>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">So geht&apos;s</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Diese kurze Anleitung zeigt dir alles Wichtige rund um Abo-Radar.
+        </p>
+      </div>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">
-          1. Übersicht anlegen &amp; erstes Abo erfassen
-        </h2>
+      <Section number={1} title="Übersicht anlegen & erstes Abo erfassen">
         <p className="text-gray-700">
           Nach dem ersten Login legst du mit einem Klick deine Abo-Übersicht an. Über den
           Button „Neues Abo” auf der{" "}
@@ -26,31 +41,25 @@ export default function SoGehtsPage() {
           </Link>{" "}
           im Bereich „Kategorien”.
         </p>
-      </section>
+      </Section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">2. Alles im Blick: die Übersicht</h2>
+      <Section number={2} title="Alles im Blick: die Übersicht">
         <p className="text-gray-700">
           Die Übersicht zeigt alle Abos mit Jahres- und Monatskosten, getrennt nach allen und
           ungekündigten Abos. Sortiere per Klick auf die Spaltentitel. Mit dem Stift-Symbol
-          bearbeitest du ein Abo, über den Button „Drucken” bekommst du eine druckfertige
-          Liste nach Kategorien.
+          bearbeitest du ein Abo, über das Drucker-Symbol lädst du eine PDF-Übersicht herunter.
         </p>
-      </section>
+      </Section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">3. Nie wieder Fristen verpassen</h2>
+      <Section number={3} title="Nie wieder Fristen verpassen">
         <p className="text-gray-700">
           Unter Einstellungen → Benachrichtigungen legst du fest, wie viele Tage vor dem
           nächsten Kündigungstermin dich Abo-Radar per E-Mail erinnert. Mit „Testmail senden”
           prüfst du sofort, ob alles ankommt.
         </p>
-      </section>
+      </Section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">
-          4. Abos per E-Mail erfassen — der E-Mail-Check-in
-        </h2>
+      <Section number={4} title="Abos per E-Mail erfassen — der E-Mail-Check-in">
         <p className="text-gray-700">
           Richte unter Einstellungen → E-Mail-Check-in ein eigenes Postfach ein
           (IMAP-Zugangsdaten genügen). Danach leitest du Bestellbestätigungen oder Rechnungen
@@ -66,25 +75,23 @@ export default function SoGehtsPage() {
           deine komplette Übersicht als Antwort — auch Fragen wie „Ist Netflix schon drin?”
           werden direkt beantwortet.
         </p>
-      </section>
+      </Section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">5. Gemeinsam nutzen</h2>
+      <Section number={5} title="Gemeinsam nutzen">
         <p className="text-gray-700">
           Über Einstellungen → Zugriff teilen lädst du z. B. deine Familie ein, deine
           Übersicht mitzunutzen — wahlweise nur lesend, mit Vollzugriff oder mit Vollzugriff
           nur auf selbst angelegte Abos. Personen mit Schreibrechten können sogar per E-Mail
           an dein Check-in-Postfach Abos eintragen.
         </p>
-      </section>
+      </Section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">6. Deine Meinung zählt</h2>
+      <Section number={6} title="Deine Meinung zählt">
         <p className="text-gray-700">
           Bewerte Abo-Radar unter Einstellungen mit einem Klick, schick uns über „Mein
           Feedback” deine Wünsche — oder empfiehl Abo-Radar weiter, wenn es dir gefällt.
         </p>
-      </section>
+      </Section>
     </div>
   );
 }
