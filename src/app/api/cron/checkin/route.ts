@@ -140,6 +140,34 @@ function describeFields(fields: CheckinExtraction["fields"], categoryName: strin
   return rows;
 }
 
+const RESEARCHED_FIELD_LABELS: Record<string, string> = {
+  cancellation_mode: "Kündigungsmodus",
+  notice_period: "Kündigungsfrist",
+};
+
+/**
+ * Hinweise für die Antwort-Mails: welche Kündigungsangaben die KI aus dem
+ * allgemeinen Wissen über den Anbieter ergänzt hat (statt aus der Mail) und
+ * ob Angaben in der Mail von den üblichen Anbieter-Bedingungen abweichen.
+ */
+function extractionNotes(extraction: CheckinExtraction): string[] {
+  const notes: string[] = [];
+  if (extraction.researched_fields.length > 0) {
+    const labels = extraction.researched_fields
+      .map((f) => RESEARCHED_FIELD_LABELS[f] ?? f)
+      .join(" und ");
+    notes.push(
+      `Hinweis: ${labels} stand nicht in deiner Mail — ich habe die Angabe aus den allgemein üblichen Vertragsbedingungen des Anbieters ergänzt. Bitte prüfe sie und antworte mit einer Korrektur, falls sie nicht stimmt.`,
+    );
+  }
+  if (extraction.knowledge_note) notes.push(`Hinweis: ${extraction.knowledge_note}`);
+  return notes;
+}
+
+function notesHtml(notes: string[]): string {
+  return notes.map((n) => `<p><em>${escapeHtml(n)}</em></p>`).join("");
+}
+
 function listHtml(rows: string[]): string {
   return rows.length > 0 ? `<ul>${rows.map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>` : "";
 }
@@ -672,12 +700,13 @@ async function processMail(
         ? `ich habe folgendes Abo erkannt:\n${describeFields(extraction.fields, null).join("\n")}`
         : `zu deiner Check-in-Mail${mail.subject ? ` ("${mail.subject}")` : ""} habe ich noch Fragen:`;
 
+    const qNotes = extractionNotes(extraction);
     await sendMail({
       to: sender.email,
       replyTo: settings.checkin_email,
       subject: `${needsConfirmation ? "Änderungsvorschlag" : "Rückfrage zu deinem Abo-Check-in"} [Abo-Radar #${itemToken}]`,
-      html: `<p>Hallo ${escapeHtml(sender.name)},</p>${introHtml}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
-      text: `Hallo ${sender.name},\n\n${introText}\n${questions.map((q) => `- ${q}`).join("\n")}\n\nAntworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.`,
+      html: `<p>Hallo ${escapeHtml(sender.name)},</p>${introHtml}${notesHtml(qNotes)}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
+      text: `Hallo ${sender.name},\n\n${introText}${qNotes.length > 0 ? `\n${qNotes.join("\n")}` : ""}\n${questions.map((q) => `- ${q}`).join("\n")}\n\nAntworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.`,
     });
     return "processed";
   }
@@ -695,11 +724,13 @@ async function processMail(
         updated_at: new Date().toISOString(),
       })
       .eq("id", itemId);
+    const notes = extractionNotes(extraction);
     await sendMail({
       to: sender.email,
+      replyTo: settings.checkin_email,
       subject: `Abo ${result.verb}: ${result.name}`,
-      html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>${extraction.summary ? escapeHtml(extraction.summary) : `das Abo wurde ${result.verb}.`}</p>${listHtml(result.rows)}`,
-      text: `Hallo ${sender.name},\n\n${extraction.summary || `das Abo wurde ${result.verb}.`}\n${result.rows.join("\n")}`,
+      html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>${extraction.summary ? escapeHtml(extraction.summary) : `das Abo wurde ${result.verb}.`}</p>${listHtml(result.rows)}${notesHtml(notes)}`,
+      text: `Hallo ${sender.name},\n\n${extraction.summary || `das Abo wurde ${result.verb}.`}\n${result.rows.join("\n")}${notes.length > 0 ? `\n\n${notes.join("\n")}` : ""}`,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
