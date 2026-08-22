@@ -105,6 +105,16 @@ function newToken(): string {
   return randomBytes(4).toString("hex").toUpperCase();
 }
 
+/**
+ * Entfernt NUL- und andere Steuerzeichen (ausser Zeilenumbruch und Tab), die
+ * vor allem bei der PDF-Textextraktion entstehen. Postgres lehnt Text mit
+ * \u0000 ab ("unsupported Unicode escape sequence"), daher wird alles
+ * bereinigt, was in die Datenbank oder an die KI geht.
+ */
+function sanitizeText(value: string): string {
+  return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+}
+
 function describeFields(fields: CheckinExtraction["fields"], categoryName: string | null): string[] {
   const rows: string[] = [];
   if (fields.name) rows.push(`Name: ${fields.name}`);
@@ -258,9 +268,9 @@ async function fetchInboxMails(settings: CheckinSettingsRow): Promise<ParsedMail
     parsed.push({
       uid,
       messageId: mail.messageId ?? null,
-      subject: mail.subject ?? "",
+      subject: sanitizeText(mail.subject ?? ""),
       fromAddress: mail.from?.value?.[0]?.address?.toLowerCase() ?? "",
-      text: text.slice(0, MAX_TEXT_LENGTH * 2),
+      text: sanitizeText(text).slice(0, MAX_TEXT_LENGTH * 2),
     });
   }
   return parsed;
@@ -751,9 +761,16 @@ export async function GET(request: Request) {
           await processMail(admin, settings, sender, profile.name, mail);
           processed++;
         } catch (err) {
-          mailErrors.push(
-            `${mail.fromAddress}: ${err instanceof Error ? err.message : String(err)}`,
-          );
+          const message = err instanceof Error ? err.message : String(err);
+          mailErrors.push(`${mail.fromAddress}: ${message}`);
+          // Der Absender soll nie ohne Rückmeldung bleiben: auch bei einem
+          // technischen Fehler gibt es eine E-Mail (best effort).
+          await sendMail({
+            to: sender.email,
+            subject: "Abo-Check-in: Verarbeitung fehlgeschlagen",
+            html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>deine Check-in-Mail${mail.subject ? ` („${escapeHtml(mail.subject)}”)` : ""} konnte wegen eines technischen Fehlers nicht verarbeitet werden:</p><p><em>${escapeHtml(message)}</em></p><p>Bitte sende die Mail später erneut.</p>`,
+            text: `Hallo ${sender.name},\n\ndeine Check-in-Mail${mail.subject ? ` ("${mail.subject}")` : ""} konnte wegen eines technischen Fehlers nicht verarbeitet werden:\n${message}\n\nBitte sende die Mail später erneut.`,
+          }).catch(() => {});
         }
         toTrash.push(mail.uid);
       }
