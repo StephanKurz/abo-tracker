@@ -154,7 +154,7 @@ export function SubscriptionForm({
           {categories.length === 0 && (
             <p className="mt-1 text-xs text-gray-500">
               Noch keine Kategorien.{" "}
-              <Link href="/categories" className="text-orange-600 hover:underline">
+              <Link href="/account" className="text-orange-600 hover:underline">
                 Jetzt anlegen
               </Link>
             </p>

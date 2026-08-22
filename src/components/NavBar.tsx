@@ -11,9 +11,7 @@ import type { OverviewOption } from "@/lib/sharing";
 
 const LINKS = [
   { href: "/dashboard", label: "Übersicht" },
-  { href: "/subscriptions/new", label: "Neues Abo" },
-  { href: "/categories", label: "Kategorien" },
-  { href: "/print", label: "Drucken" },
+  { href: "/so-gehts", label: "So geht's" },
   { href: "/account", label: "Einstellungen" },
 ];
 
@@ -55,7 +53,9 @@ export function NavBar({
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-gray-900">Abo-Radar</span>
+            <Link href="/dashboard" className="text-lg font-bold text-gray-900">
+              Abo-Radar
+            </Link>
             <RatingStar percentage={ratingPercentage} hasRated={hasRated} />
           </div>
           <div className="flex items-center gap-3 text-sm text-gray-700 sm:hidden">

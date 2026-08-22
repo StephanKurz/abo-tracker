@@ -54,7 +54,7 @@ export function renderWelcomeMail(input: {
        Über ${link("/subscriptions/new", "„Neues Abo”")} erfasst du dann dein erstes Abo:
        Name, Betrag, Abrechnung (monatlich/jährlich), Abschlussdatum, Mindestlaufzeit und
        Kündigungsfrist. Kategorien wie „Streaming” oder „Versicherungen” helfen beim Sortieren —
-       du kannst sie unter ${link("/categories", "„Kategorien”")} verwalten.`,
+       du kannst sie unter ${link("/account", "„Einstellungen”")} im Bereich „Kategorien” verwalten.`,
     )}
 
     ${section(
@@ -63,8 +63,8 @@ export function renderWelcomeMail(input: {
       `Die ${link("/dashboard", "„Übersicht”")} zeigt alle Abos mit Jahres- und Monatskosten,
        getrennt nach allen und ungekündigten Abos. Sortiere per Klick auf die Spaltentitel —
        standardmäßig steht das Abo mit dem nächsten Kündigungstermin oben. Mit dem
-       Stift-Symbol bearbeitest du ein Abo, über ${link("/print", "„Drucken”")} bekommst du
-       eine druckfertige Liste nach Kategorien.`,
+       Stift-Symbol bearbeitest du ein Abo, über den Button ${link("/print", "„Drucken”")}
+       auf der Übersicht bekommst du eine druckfertige Liste nach Kategorien.`,
     )}
 
     ${section(
@@ -81,8 +81,9 @@ export function renderWelcomeMail(input: {
       `Das Herzstück von Abo-Radar: Richte unter ${link("/account", "„Einstellungen”")} →
        <strong>E-Mail-Check-in</strong> ein eigenes Postfach ein (IMAP-Zugangsdaten genügen).
        Danach leitest du einfach Bestellbestätigungen oder Rechnungen an dieses Postfach weiter —
-       oder schreibst formlos <em>„Netflix, 12,99 € monatlich, ab 01.09.”</em>.
-       Abo-Radar liest die Mail, erkennt die Daten und trägt das Abo automatisch ein.
+       als Text, als PDF-Anhang oder als Foto/Screenshot (JPEG, PNG, GIF, WebP, bis zu 3 Bilder
+       pro Mail, je max. 5 MB) — oder schreibst formlos <em>„Netflix, 12,99 € monatlich, ab 01.09.”</em>.
+       Abo-Radar liest die Mail, erkennt die Daten per KI und trägt das Abo automatisch ein.
        Fehlt etwas, bekommst du eine Rückfrage per E-Mail — einfach antworten, fertig.
        ${tip(
          `Schick eine Mail mit dem Betreff <strong>„Abo Status”</strong> an dein Check-in-Postfach
@@ -122,12 +123,13 @@ export function renderWelcomeMail(input: {
     "1. Übersicht anlegen & erstes Abo erfassen",
     "Nach dem ersten Login legst du mit einem Klick deine Abo-Übersicht an. Über",
     "„Neues Abo” erfasst du Name, Betrag, Abrechnung, Abschlussdatum, Mindestlaufzeit",
-    "und Kündigungsfrist. Kategorien verwaltest du unter „Kategorien”.",
+    "und Kündigungsfrist. Kategorien verwaltest du unter „Einstellungen” im Bereich",
+    "„Kategorien”.",
     "",
     "2. Alles im Blick: die Übersicht",
     "Die Übersicht zeigt alle Abos mit Jahres- und Monatskosten, getrennt nach allen",
     "und ungekündigten Abos. Sortierung per Klick auf die Spaltentitel, Bearbeiten über",
-    "das Stift-Symbol, druckfertige Liste über „Drucken”.",
+    "das Stift-Symbol, druckfertige Liste über den Button „Drucken” auf der Übersicht.",
     "",
     "3. Nie wieder Fristen verpassen",
     "Unter „Einstellungen” → Benachrichtigungen legst du fest, wie viele Tage vor dem",
@@ -135,9 +137,10 @@ export function renderWelcomeMail(input: {
     "",
     "4. Abos per E-Mail erfassen — der E-Mail-Check-in",
     "Richte unter „Einstellungen” → E-Mail-Check-in ein eigenes Postfach ein und leite",
-    "Bestellbestätigungen einfach dorthin weiter — oder schreib formlos „Netflix,",
-    "12,99 € monatlich, ab 01.09.”. Abo-Radar trägt das Abo automatisch ein und fragt",
-    "per E-Mail nach, wenn etwas fehlt.",
+    "Bestellbestätigungen einfach dorthin weiter — als Text, als PDF-Anhang oder als",
+    "Foto/Screenshot (JPEG, PNG, GIF, WebP, bis zu 3 Bilder, je max. 5 MB) — oder schreib",
+    "formlos „Netflix, 12,99 € monatlich, ab 01.09.”. Abo-Radar trägt das Abo automatisch",
+    "ein und fragt per E-Mail nach, wenn etwas fehlt.",
     "Tipp: Eine Mail mit Betreff „Abo Status” liefert dir deine komplette Übersicht",
     "als Antwort — auch Fragen wie „Ist Netflix schon drin?” werden beantwortet.",
     "",

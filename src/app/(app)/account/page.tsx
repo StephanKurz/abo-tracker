@@ -6,6 +6,8 @@ import { FeedbackCard } from "@/components/FeedbackCard";
 import { ShareAccessCard } from "@/components/ShareAccessCard";
 import { MyInvitesCard } from "@/components/MyInvitesCard";
 import { CheckinCard } from "@/components/CheckinCard";
+import { CategoriesManager } from "@/components/CategoriesManager";
+import { resolveActiveOverview } from "@/lib/activeOverview";
 import type { CollaboratorStatus, InvitePermission } from "@/lib/sharing";
 
 export default async function AccountPage() {
@@ -18,6 +20,8 @@ export default async function AccountPage() {
     redirect("/login");
   }
 
+  const { active } = await resolveActiveOverview(supabase, user);
+
   const [
     { data: profile },
     { data: ownRating },
@@ -25,6 +29,7 @@ export default async function AccountPage() {
     { data: feedbackRaw },
     { data: checkinSettingsRaw },
     { data: checkinItemsRaw },
+    { data: categoriesRaw },
   ] = await Promise.all([
     supabase.from("profiles").select("name, email, notify_days_before").eq("id", user.id).single(),
     supabase.from("app_ratings").select("is_positive").eq("user_id", user.id).maybeSingle(),
@@ -45,6 +50,9 @@ export default async function AccountPage() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(5),
+    active
+      ? supabase.from("categories").select("*").eq("user_id", active.ownerId).order("name")
+      : Promise.resolve({ data: null }),
   ]);
 
   const feedbackEntries = (feedbackRaw ?? []).map((f) => ({
@@ -149,6 +157,17 @@ export default async function AccountPage() {
           <MyInvitesCard invites={incomingInvites} />
         </div>
       </div>
+      {active && (
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-gray-900">Kategorien</h2>
+          <CategoriesManager
+            categories={categoriesRaw ?? []}
+            viewerId={user.id}
+            role={active.role}
+            overviewOwnerId={active.ownerId}
+          />
+        </div>
+      )}
     </div>
   );
 }
