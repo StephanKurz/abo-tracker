@@ -442,13 +442,16 @@ async function sendStatusMail(
   });
 }
 
+/** Ergebnis der Verarbeitung einer Mail, für die Zähler in der JSON-Antwort. */
+type ProcessOutcome = "processed" | "duplicate";
+
 async function processMail(
   admin: Admin,
   settings: CheckinSettingsRow,
   sender: Sender,
   ownerName: string,
   mail: ParsedMail,
-): Promise<void> {
+): Promise<ProcessOutcome> {
   // Antwort auf eine frühere Rückfrage?
   const tokenMatch = mail.subject.match(TOKEN_RE);
   const openItem = tokenMatch
@@ -471,7 +474,7 @@ async function processMail(
       .eq("user_id", sender.userId)
       .eq("message_id", mail.messageId)
       .maybeSingle();
-    if (dupe) return;
+    if (dupe) return "duplicate";
   }
 
   const [{ data: subs }, { data: cats }] = await Promise.all([
@@ -512,7 +515,7 @@ async function processMail(
       .from("checkin_items")
       .update({ status: "applied", kind: "status_request", updated_at: new Date().toISOString() })
       .eq("id", itemId);
-    return;
+    return "processed";
   }
 
   let extraction: CheckinExtraction;
@@ -566,7 +569,7 @@ async function processMail(
         updated_at: new Date().toISOString(),
       })
       .eq("id", itemId);
-    return;
+    return "processed";
   }
 
   if (extraction.action === "reject") {
@@ -580,7 +583,7 @@ async function processMail(
       html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>der Vorschlag wurde verworfen. Es wurde nichts geändert.</p>`,
       text: `Hallo ${sender.name},\n\nder Vorschlag wurde verworfen. Es wurde nichts geändert.`,
     });
-    return;
+    return "processed";
   }
 
   // Unklar oder unbestätigtes Update: Rückfrage bzw. Änderungsvorschlag senden
@@ -646,7 +649,7 @@ async function processMail(
       html: `<p>Hallo ${escapeHtml(sender.name)},</p>${introHtml}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
       text: `Hallo ${sender.name},\n\n${introText}\n${questions.map((q) => `- ${q}`).join("\n")}\n\nAntworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.`,
     });
-    return;
+    return "processed";
   }
 
   // Anwenden (Neuanlage direkt bzw. bestätigtes Update)
@@ -684,10 +687,11 @@ async function processMail(
         html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>${escapeHtml(message)}</p>`,
         text: `Hallo ${sender.name},\n\n${message}`,
       });
-      return;
+      return "processed";
     }
     throw err;
   }
+  return "processed";
 }
 
 export async function GET(request: Request) {
@@ -703,6 +707,9 @@ export async function GET(request: Request) {
     .eq("enabled", true);
 
   let processed = 0;
+  let skippedDuplicates = 0;
+  let skippedEmpty = 0;
+  let movedToSpam = 0;
   const errors: string[] = [];
 
   for (const settings of allSettings ?? []) {
@@ -738,11 +745,13 @@ export async function GET(request: Request) {
         const sender = senders.get(mail.fromAddress);
         if (!sender) {
           toSpam.push(mail.uid);
+          movedToSpam++;
           continue;
         }
 
         if (!mail.text.trim()) {
           toTrash.push(mail.uid);
+          skippedEmpty++;
           continue;
         }
 
@@ -758,8 +767,9 @@ export async function GET(request: Request) {
         }
 
         try {
-          await processMail(admin, settings, sender, profile.name, mail);
-          processed++;
+          const outcome = await processMail(admin, settings, sender, profile.name, mail);
+          if (outcome === "duplicate") skippedDuplicates++;
+          else processed++;
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           mailErrors.push(`${mail.fromAddress}: ${message}`);
@@ -797,5 +807,12 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, processed, errors });
+  return NextResponse.json({
+    ok: true,
+    processed,
+    skipped_duplicates: skippedDuplicates,
+    skipped_empty: skippedEmpty,
+    moved_to_spam: movedToSpam,
+    errors,
+  });
 }
