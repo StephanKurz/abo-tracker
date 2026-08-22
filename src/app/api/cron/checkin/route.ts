@@ -6,7 +6,9 @@ import { extractText } from "unpdf";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decryptSecret } from "@/lib/checkinCrypto";
 import { extractSubscriptionFromEmail, type CheckinExtraction } from "@/lib/checkinAi";
+import { renderStatusMail, looksLikeStatusRequest, type StatusRow } from "@/lib/checkinStatusMail";
 import { sendMail } from "@/lib/email";
+import { canWriteRow, type Role } from "@/lib/sharing";
 import {
   BILLING_CYCLE_LABELS,
   CANCELLATION_MODE_LABELS,
@@ -40,6 +42,60 @@ type ParsedMail = {
   fromAddress: string;
   text: string;
 };
+
+/** Person, die eine Check-in-Mail senden darf, mit ihrer Rolle auf der Übersicht. */
+type Sender = { userId: string; name: string; email: string; role: Role };
+
+/** Absender darf die gewünschte Änderung nicht vornehmen — kein Systemfehler. */
+class PermissionError extends Error {}
+
+/**
+ * Baut die Landkarte der berechtigten Absender für ein Check-in-Postfach:
+ * der Besitzer selbst plus alle Mitnutzer mit Schreibrechten auf seine
+ * Übersicht. Nur-Lesen-Berechtigte bleiben bewusst außen vor.
+ */
+async function buildSenderMap(
+  admin: Admin,
+  ownerId: string,
+  ownerProfile: { email: string; name: string },
+): Promise<Map<string, Sender>> {
+  const senders = new Map<string, Sender>();
+  senders.set(ownerProfile.email.toLowerCase(), {
+    userId: ownerId,
+    name: ownerProfile.name,
+    email: ownerProfile.email,
+    role: "owner",
+  });
+
+  const { data: collaborators } = await admin
+    .from("overview_collaborators")
+    .select("collaborator_id, permission")
+    .eq("overview_owner_id", ownerId)
+    .eq("status", "accepted")
+    .in("permission", ["full", "full_own"]);
+
+  const ids = (collaborators ?? [])
+    .map((c) => c.collaborator_id)
+    .filter((id): id is string => id != null);
+  if (ids.length === 0) return senders;
+
+  // Kein deklarierter Fremdschlüssel collaborator_id -> profiles, daher
+  // separate Abfrage statt PostgREST-Embedding.
+  const { data: profiles } = await admin.from("profiles").select("id, email, name").in("id", ids);
+  const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+
+  for (const c of collaborators ?? []) {
+    const p = c.collaborator_id ? byId.get(c.collaborator_id) : null;
+    if (!p) continue;
+    senders.set(p.email.toLowerCase(), {
+      userId: p.id,
+      name: p.name,
+      email: p.email,
+      role: c.permission as Role,
+    });
+  }
+  return senders;
+}
 
 function esc(value: string): string {
   return value
@@ -146,20 +202,38 @@ async function fetchUnseenMails(settings: CheckinSettingsRow): Promise<ParsedMai
   return parsed;
 }
 
-// Wendet eine validierte Extraktion an (Neuanlage oder bestätigtes Update).
-// Gibt die Beschreibung für die Bestätigungs-Mail zurück oder wirft einen Fehler.
+/**
+ * Wendet eine validierte Extraktion an (Neuanlage oder bestätigtes Update).
+ * `ownerId` bestimmt, in welcher Übersicht das Abo landet, `sender` wer als
+ * Ersteller bzw. Bearbeiter vermerkt wird. Gibt die Beschreibung für die
+ * Bestätigungs-Mail zurück oder wirft einen Fehler.
+ */
 async function applyExtraction(
   admin: Admin,
-  userId: string,
+  ownerId: string,
+  sender: Sender,
   extraction: CheckinExtraction,
 ): Promise<{ verb: "angelegt" | "aktualisiert"; name: string; rows: string[] }> {
   if (extraction.action === "update" && extraction.subscription_id) {
+    const { data: existing } = await admin
+      .from("subscriptions")
+      .select("created_by")
+      .eq("id", extraction.subscription_id)
+      .eq("user_id", ownerId)
+      .maybeSingle();
+    if (!existing) throw new Error("Abo nicht gefunden.");
+    if (!canWriteRow(sender.role, sender.userId, existing.created_by)) {
+      throw new PermissionError(
+        "Du darfst nur Abos ändern, die du selbst angelegt hast. Es wurde nichts geändert.",
+      );
+    }
+
     const updates: Record<string, unknown> = { ...extraction.fields };
     const { data: updated, error } = await admin
       .from("subscriptions")
-      .update({ ...updates, updated_by: userId, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_by: sender.userId, updated_at: new Date().toISOString() })
       .eq("id", extraction.subscription_id)
-      .eq("user_id", userId)
+      .eq("user_id", ownerId)
       .select("name")
       .single();
     if (error) throw new Error(error.message);
@@ -175,14 +249,14 @@ async function applyExtraction(
   const { data: categories } = await admin
     .from("categories")
     .select("id, name")
-    .eq("user_id", userId);
+    .eq("user_id", ownerId);
   let categoryId = (categories ?? []).find(
     (c) => c.name.toLowerCase() === categoryName.toLowerCase(),
   )?.id;
   if (!categoryId) {
     const { data: newCat, error: catError } = await admin
       .from("categories")
-      .insert({ name: categoryName, user_id: userId, created_by: userId })
+      .insert({ name: categoryName, user_id: ownerId, created_by: sender.userId })
       .select("id")
       .single();
     if (catError) throw new Error(catError.message);
@@ -201,8 +275,8 @@ async function applyExtraction(
     cancellation_mode: fields.cancellation_mode ?? null,
     notice_period: fields.notice_period ?? null,
     canceled_at: fields.canceled_at ?? null,
-    user_id: userId,
-    created_by: userId,
+    user_id: ownerId,
+    created_by: sender.userId,
   });
   if (error) throw new Error(error.message);
 
@@ -213,10 +287,47 @@ async function applyExtraction(
   };
 }
 
+/** Schickt die Abo-Übersicht der Zielübersicht als Antwort auf eine Status-Abfrage. */
+async function sendStatusMail(
+  admin: Admin,
+  settings: CheckinSettingsRow,
+  sender: Sender,
+  ownerName: string,
+  intro: string,
+): Promise<void> {
+  const { data: subscriptions } = await admin
+    .from("subscriptions")
+    .select("*, categories(name)")
+    .eq("user_id", settings.user_id)
+    .order("name");
+
+  const rows: StatusRow[] = (subscriptions ?? []).map((sub) => ({
+    ...sub,
+    category_name:
+      (sub as { categories?: { name: string } | null }).categories?.name ?? "Ohne Kategorie",
+  }));
+
+  const { html, text } = renderStatusMail({
+    recipientName: sender.name,
+    ownerName: sender.role === "owner" ? null : ownerName,
+    rows,
+    intro,
+  });
+
+  await sendMail({
+    to: sender.email,
+    replyTo: settings.checkin_email,
+    subject: "Deine Abo-Übersicht",
+    html,
+    text,
+  });
+}
+
 async function processMail(
   admin: Admin,
   settings: CheckinSettingsRow,
-  profile: { email: string; name: string },
+  sender: Sender,
+  ownerName: string,
   mail: ParsedMail,
 ): Promise<void> {
   // Antwort auf eine frühere Rückfrage?
@@ -226,7 +337,7 @@ async function processMail(
         await admin
           .from("checkin_items")
           .select("id, token, extracted, open_questions, kind")
-          .eq("user_id", settings.user_id)
+          .eq("user_id", sender.userId)
           .eq("token", tokenMatch[1].toUpperCase())
           .eq("status", "question_sent")
           .maybeSingle()
@@ -238,7 +349,7 @@ async function processMail(
     const { data: dupe } = await admin
       .from("checkin_items")
       .select("id")
-      .eq("user_id", settings.user_id)
+      .eq("user_id", sender.userId)
       .eq("message_id", mail.messageId)
       .maybeSingle();
     if (dupe) return;
@@ -256,7 +367,7 @@ async function processMail(
     const { data: inserted, error } = await admin
       .from("checkin_items")
       .insert({
-        user_id: settings.user_id,
+        user_id: sender.userId,
         message_id: mail.messageId,
         token: itemToken,
         status: "received",
@@ -267,6 +378,22 @@ async function processMail(
       .single();
     if (error) throw new Error(error.message);
     itemId = inserted.id;
+  }
+
+  // Eindeutige Status-Abfragen ohne KI-Aufruf beantworten
+  if (!openItem && looksLikeStatusRequest(mail.subject, mail.text)) {
+    await sendStatusMail(
+      admin,
+      settings,
+      sender,
+      ownerName,
+      "hier ist deine aktuelle Abo-Übersicht.",
+    );
+    await admin
+      .from("checkin_items")
+      .update({ status: "applied", kind: "status_request", updated_at: new Date().toISOString() })
+      .eq("id", itemId);
+    return;
   }
 
   let extraction: CheckinExtraction;
@@ -297,7 +424,31 @@ async function processMail(
       ? "update_subscription"
       : extraction.action === "create"
         ? "new_subscription"
-        : (openItem?.kind ?? "unknown");
+        : extraction.action === "status"
+          ? "status_request"
+          : (openItem?.kind ?? "unknown");
+
+  // Frei formulierte Status- bzw. Bestandsfrage: Übersicht schicken, wobei die
+  // KI-Zusammenfassung als konkrete Antwort über der Tabelle steht.
+  if (extraction.action === "status") {
+    await sendStatusMail(
+      admin,
+      settings,
+      sender,
+      ownerName,
+      extraction.summary || "hier ist deine aktuelle Abo-Übersicht.",
+    );
+    await admin
+      .from("checkin_items")
+      .update({
+        status: "applied",
+        kind,
+        extracted: extraction,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", itemId);
+    return;
+  }
 
   if (extraction.action === "reject") {
     await admin
@@ -305,10 +456,10 @@ async function processMail(
       .update({ status: "rejected", updated_at: new Date().toISOString() })
       .eq("id", itemId);
     await sendMail({
-      to: profile.email,
+      to: sender.email,
       subject: "Alles klar, nichts geändert",
-      html: `<p>Hallo ${esc(profile.name)},</p><p>der Vorschlag wurde verworfen. Es wurde nichts geändert.</p>`,
-      text: `Hallo ${profile.name},\n\nder Vorschlag wurde verworfen. Es wurde nichts geändert.`,
+      html: `<p>Hallo ${esc(sender.name)},</p><p>der Vorschlag wurde verworfen. Es wurde nichts geändert.</p>`,
+      text: `Hallo ${sender.name},\n\nder Vorschlag wurde verworfen. Es wurde nichts geändert.`,
     });
     return;
   }
@@ -339,25 +490,25 @@ async function processMail(
       .eq("id", itemId);
 
     const introHtml = needsConfirmation
-      ? `<p>deine Mail passt zu deinem bestehenden Abo${targetName ? ` <strong>${esc(targetName)}</strong>` : ""}. Ich schlage folgende Änderung vor:</p>${listHtml(describeFields(extraction.fields, null))}`
+      ? `<p>deine Mail passt zum bestehenden Abo${targetName ? ` <strong>${esc(targetName)}</strong>` : ""}. Ich schlage folgende Änderung vor:</p>${listHtml(describeFields(extraction.fields, null))}`
       : `<p>zu deiner Check-in-Mail${mail.subject ? ` („${esc(mail.subject)}”)` : ""} habe ich noch Fragen:</p>`;
     const introText = needsConfirmation
-      ? `deine Mail passt zu deinem bestehenden Abo${targetName ? ` "${targetName}"` : ""}. Ich schlage folgende Änderung vor:\n${describeFields(extraction.fields, null).join("\n")}`
+      ? `deine Mail passt zum bestehenden Abo${targetName ? ` "${targetName}"` : ""}. Ich schlage folgende Änderung vor:\n${describeFields(extraction.fields, null).join("\n")}`
       : `zu deiner Check-in-Mail${mail.subject ? ` ("${mail.subject}")` : ""} habe ich noch Fragen:`;
 
     await sendMail({
-      to: profile.email,
+      to: sender.email,
       replyTo: settings.checkin_email,
       subject: `${needsConfirmation ? "Änderungsvorschlag" : "Rückfrage zu deinem Abo-Check-in"} [Abo-Tracker #${itemToken}]`,
-      html: `<p>Hallo ${esc(profile.name)},</p>${introHtml}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
-      text: `Hallo ${profile.name},\n\n${introText}\n${questions.map((q) => `- ${q}`).join("\n")}\n\nAntworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.`,
+      html: `<p>Hallo ${esc(sender.name)},</p>${introHtml}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
+      text: `Hallo ${sender.name},\n\n${introText}\n${questions.map((q) => `- ${q}`).join("\n")}\n\nAntworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.`,
     });
     return;
   }
 
   // Anwenden (Neuanlage direkt bzw. bestätigtes Update)
   try {
-    const result = await applyExtraction(admin, settings.user_id, extraction);
+    const result = await applyExtraction(admin, settings.user_id, sender, extraction);
     await admin
       .from("checkin_items")
       .update({
@@ -369,20 +520,29 @@ async function processMail(
       })
       .eq("id", itemId);
     await sendMail({
-      to: profile.email,
+      to: sender.email,
       subject: `Abo ${result.verb}: ${result.name}`,
-      html: `<p>Hallo ${esc(profile.name)},</p><p>${extraction.summary ? esc(extraction.summary) : `das Abo wurde ${result.verb}.`}</p>${listHtml(result.rows)}`,
-      text: `Hallo ${profile.name},\n\n${extraction.summary || `das Abo wurde ${result.verb}.`}\n${result.rows.join("\n")}`,
+      html: `<p>Hallo ${esc(sender.name)},</p><p>${extraction.summary ? esc(extraction.summary) : `das Abo wurde ${result.verb}.`}</p>${listHtml(result.rows)}`,
+      text: `Hallo ${sender.name},\n\n${extraction.summary || `das Abo wurde ${result.verb}.`}\n${result.rows.join("\n")}`,
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     await admin
       .from("checkin_items")
-      .update({
-        status: "failed",
-        error: err instanceof Error ? err.message : String(err),
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status: "failed", error: message, updated_at: new Date().toISOString() })
       .eq("id", itemId);
+
+    // Fehlende Berechtigung ist kein Systemfehler: der Absender bekommt eine
+    // Erklärung, der Gesamtlauf läuft normal weiter.
+    if (err instanceof PermissionError) {
+      await sendMail({
+        to: sender.email,
+        subject: "Änderung nicht möglich",
+        html: `<p>Hallo ${esc(sender.name)},</p><p>${esc(message)}</p>`,
+        text: `Hallo ${sender.name},\n\n${message}`,
+      });
+      return;
+    }
     throw err;
   }
 }
@@ -418,24 +578,27 @@ export async function GET(request: Request) {
         .eq("owner_id", settings.user_id)
         .maybeSingle();
 
+      const senders = await buildSenderMap(admin, settings.user_id, profile);
       const mails = await fetchUnseenMails(settings);
 
       for (const mail of mails) {
-        // Nur Mails von der registrierten Nutzer-Adresse verarbeiten
-        if (mail.fromAddress !== profile.email.toLowerCase()) continue;
+        // Nur Mails von berechtigten Absendern verarbeiten: der Besitzer des
+        // Postfachs sowie Mitnutzer mit Schreibrechten auf seine Übersicht.
+        const sender = senders.get(mail.fromAddress);
+        if (!sender) continue;
         if (!mail.text.trim()) continue;
 
         if (!overview) {
           await sendMail({
-            to: profile.email,
+            to: sender.email,
             subject: "Abo-Check-in: Bitte zuerst Übersicht anlegen",
-            html: `<p>Hallo ${esc(profile.name)},</p><p>deine Check-in-Mail konnte nicht verarbeitet werden, weil du noch keine eigene Abo-Übersicht hast. Lege sie zuerst in der App an und sende die Mail danach erneut.</p>`,
-            text: `Hallo ${profile.name},\n\ndeine Check-in-Mail konnte nicht verarbeitet werden, weil du noch keine eigene Abo-Übersicht hast. Lege sie zuerst in der App an und sende die Mail danach erneut.`,
+            html: `<p>Hallo ${esc(sender.name)},</p><p>deine Check-in-Mail konnte nicht verarbeitet werden, weil noch keine Abo-Übersicht angelegt ist. Lege sie zuerst in der App an und sende die Mail danach erneut.</p>`,
+            text: `Hallo ${sender.name},\n\ndeine Check-in-Mail konnte nicht verarbeitet werden, weil noch keine Abo-Übersicht angelegt ist. Lege sie zuerst in der App an und sende die Mail danach erneut.`,
           });
           continue;
         }
 
-        await processMail(admin, settings, profile, mail);
+        await processMail(admin, settings, sender, profile.name, mail);
         processed++;
       }
 
