@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sendMail } from "@/lib/email";
+import { sendMail, escapeHtml } from "@/lib/email";
 import { isEmail } from "@/lib/validation";
 
 export async function sendRecommendation(
@@ -39,7 +39,7 @@ export async function sendRecommendation(
       to: trimmedEmail,
       subject: "Abo-Radar: Empfehlung",
       html: `
-        <p>${intro}</p>
+        <p>${escapeHtml(intro)}</p>
         <p>${pitch}</p>
         ${appUrl ? `<p><a href="${appUrl}/register">Jetzt kostenlos registrieren</a></p>` : ""}
       `,

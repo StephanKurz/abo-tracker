@@ -6,20 +6,13 @@ import {
   isFullyExpired,
 } from "@/lib/subscriptions";
 import type { Subscription } from "@/lib/subscriptions";
+import { escapeHtml as esc } from "@/lib/email";
 
 // Rendert die Abo-Übersicht als Antwortmail auf eine Status-Abfrage.
 // Bewusst eigenständig statt PrintView wiederzuverwenden: PrintView ist eine
 // Client-Komponente mit Tailwind-Klassen, E-Mail-Programme brauchen Inline-CSS.
 
 export type StatusRow = Subscription & { category_name: string };
-
-function esc(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 const TD = 'style="padding:4px 8px;border-top:1px solid #e5e7eb;"';
 const TH = 'style="padding:4px 8px;text-align:left;font-weight:bold;color:#6b7280;"';

@@ -15,12 +15,21 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [website, setWebsite] = useState(""); // Honeypot: für Menschen unsichtbar, Bots füllen es oft blind aus
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (website) {
+      // Honeypot ausgefüllt: vermutlich ein Bot. So tun, als hätte es
+      // geklappt, ohne tatsächlich ein Konto anzulegen oder dem Bot einen
+      // Hinweis auf die Erkennung zu geben.
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      return;
+    }
 
     if (!isPasswordValid(password)) {
       setError("Bitte alle Passwort-Anforderungen erfüllen.");
@@ -53,6 +62,23 @@ export default function RegisterPage() {
       <div className={`${cardClass} w-full max-w-md`}>
         <h1 className="mb-6 text-2xl font-bold text-gray-900">Registrieren</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Honeypot: visuell verborgen (nicht display:none, das erkennen
+              einfache Bots), aus Tab-Reihenfolge und Screenreadern entfernt.
+              Kein position:absolute mit Offscreen-Offset, um keinen horizontalen
+              Scrollbalken auf der Seite zu erzeugen. */}
+          <div className="sr-only" aria-hidden="true">
+            <label htmlFor="website">Website</label>
+            <input
+              id="website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </div>
+
           <div>
             <FieldLabel required htmlFor="name">
               Name

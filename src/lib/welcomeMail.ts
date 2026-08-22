@@ -3,15 +3,9 @@
 // verschickt. Nur Inline-CSS, damit E-Mail-Programme sie korrekt darstellen;
 // den gebrandeten Rahmen (Kopfleiste, Signatur) ergänzt sendMail() zentral.
 
-const ORANGE = "#ea580c";
+import { escapeHtml as esc } from "@/lib/email";
 
-function esc(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+const ORANGE = "#ea580c";
 
 function section(number: number, title: string, contentHtml: string): string {
   return `
