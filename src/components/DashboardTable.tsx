@@ -80,32 +80,32 @@ export function DashboardTable({
       <div className="flex flex-wrap gap-4">
         <div className="flex flex-1 flex-wrap gap-6 rounded-lg bg-white p-4 shadow-md">
           <h2 className="w-full text-sm font-semibold text-gray-700">Alle Abos</h2>
-          <div>
-            <p className="text-xs text-gray-500">Gesamtsumme pro Jahr</p>
+          <div className="text-center">
+            <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Jahr</p>
             <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearly)}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Gesamtsumme pro Monat</p>
+          <div className="text-center">
+            <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Monat</p>
             <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthly)}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Anzahl Abos</p>
+          <div className="text-center">
+            <p className="text-xs font-bold text-orange-600">Anzahl Abos</p>
             <p className="text-xl font-bold text-gray-900">{subscriptions.length}</p>
           </div>
         </div>
 
         <div className="flex flex-1 flex-wrap gap-6 rounded-lg bg-white p-4 shadow-md">
           <h2 className="w-full text-sm font-semibold text-gray-700">Ungekündigte Abos</h2>
-          <div>
-            <p className="text-xs text-gray-500">Gesamtsumme pro Jahr</p>
+          <div className="text-center">
+            <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Jahr</p>
             <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearlyUncanceled)}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Gesamtsumme pro Monat</p>
+          <div className="text-center">
+            <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Monat</p>
             <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthlyUncanceled)}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Anzahl Abos</p>
+          <div className="text-center">
+            <p className="text-xs font-bold text-orange-600">Anzahl Abos</p>
             <p className="text-xl font-bold text-gray-900">{activeUncanceled.length}</p>
           </div>
         </div>
@@ -115,25 +115,25 @@ export function DashboardTable({
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="sticky top-0 z-10 border-b border-gray-200 bg-white text-gray-600">
             <tr>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Kategorie</th>
-              <th className="px-4 py-3">Abrechnung</th>
-              <th className="px-4 py-3 text-right">Betrag</th>
-              <th className="px-4 py-3 text-right">Jahreskosten</th>
-              <th className="px-4 py-3 text-right">
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Kategorie</th>
+              <th className="px-4 py-3 font-bold">Abrechnung</th>
+              <th className="px-4 py-3 text-right font-bold">Betrag</th>
+              <th className="px-4 py-3 text-right font-bold">Jahreskosten</th>
+              <th className="px-4 py-3 text-right font-bold">
                 <button
                   onClick={() => toggleSort("startDate")}
-                  className="flex w-full items-center justify-end gap-1 whitespace-nowrap font-medium hover:text-orange-600"
+                  className="flex w-full items-center justify-end gap-1 whitespace-nowrap font-bold hover:text-orange-600"
                 >
                   <span>Abschlussdatum</span>
                   {sortColumn === "startDate" && <span>{sortDir === "asc" ? "▲" : "▼"}</span>}
                 </button>
               </th>
-              <th className="px-4 py-3 text-right">
+              <th className="px-4 py-3 text-right font-bold">
                 <button
                   onClick={() => toggleSort("nextCancellation")}
-                  className="flex w-full items-center justify-end gap-1 whitespace-nowrap font-medium hover:text-orange-600"
+                  className="flex w-full items-center justify-end gap-1 whitespace-nowrap font-bold hover:text-orange-600"
                 >
                   <span>Kündbar bis</span>
                   {sortColumn === "nextCancellation" && <span>{sortDir === "asc" ? "▲" : "▼"}</span>}
@@ -178,12 +178,35 @@ export function DashboardTable({
                     {nextCancellation ? formatDate(nextCancellation) : "–"}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/subscriptions/${sub.id}`}
-                      className="text-orange-600 hover:underline"
-                    >
-                      {canWriteRow(role, viewerId, sub.created_by) ? "Bearbeiten" : "Ansehen"}
-                    </Link>
+                    {canWriteRow(role, viewerId, sub.created_by) ? (
+                      <Link
+                        href={`/subscriptions/${sub.id}`}
+                        aria-label="Bearbeiten"
+                        title="Bearbeiten"
+                        className="inline-flex text-orange-600 hover:text-orange-700"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-5 w-5"
+                        >
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                        </svg>
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/subscriptions/${sub.id}`}
+                        className="text-orange-600 hover:underline"
+                      >
+                        Ansehen
+                      </Link>
+                    )}
                   </td>
                 </tr>
               );

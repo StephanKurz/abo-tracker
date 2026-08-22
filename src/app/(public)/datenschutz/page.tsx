@@ -23,7 +23,7 @@ export default function DatenschutzPage() {
           irgendeiner Form Zugriff auf diese Daten hätte.
         </p>
         <p className="text-gray-700">
-          Über die Funktion „Zugriff teilen” in „Mein Konto” kannst du eine andere, bereits
+          Über die Funktion „Zugriff teilen” in „Einstellungen” kannst du eine andere, bereits
           registrierte Person gezielt und freiwillig einladen, deine Abo-Übersicht einzusehen oder
           zu bearbeiten (Vollzugriff, Vollzugriff nur für selbst angelegte Abos, oder Nur-Lese-Zugriff).
           Eine solche Freigabe wird erst wirksam, nachdem die eingeladene Person die Einladung

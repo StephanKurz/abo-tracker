@@ -58,8 +58,9 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-md space-y-4">
+      <h1 className="text-center text-3xl font-bold text-orange-600">KI-Abo-Tracker</h1>
       <div className={cardClass}>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Anmelden</h1>
+        <h2 className="mb-6 text-2xl font-bold text-gray-900">Anmelden</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <FieldLabel required htmlFor="identifier">
@@ -104,7 +105,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className={cardClass}>
+      <div className={`${cardClass} flex justify-center`}>
         <RecommendWidget />
       </div>
     </div>

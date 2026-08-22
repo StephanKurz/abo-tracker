@@ -27,7 +27,7 @@ export function CreateOverviewCard() {
       <h1 className="text-xl font-bold text-gray-900">Du hast noch keine eigene Abo-Übersicht</h1>
       <p className="text-sm text-gray-600">
         Lege deine eigene Übersicht an, um Abos zu erfassen. Wurdest du von jemand anderem eingeladen,
-        findest du die Einladung unter „Mein Konto”.
+        findest du die Einladung unter „Einstellungen”.
       </p>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button type="button" onClick={handleCreate} disabled={loading} className={buttonPrimaryClass}>

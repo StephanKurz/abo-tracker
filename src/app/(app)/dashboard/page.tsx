@@ -27,7 +27,7 @@ export default async function DashboardPage() {
           : `Du hast ${pendingInviteCount} ausstehende Einladungen.`}
       </p>
       <Link href="/account" className="text-sm font-semibold text-orange-600 hover:underline">
-        Zu Mein Konto
+        Zu den Einstellungen
       </Link>
     </div>
   );
