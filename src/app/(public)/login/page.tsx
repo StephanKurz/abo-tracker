@@ -58,7 +58,10 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-md space-y-4">
-      <h1 className="text-center text-3xl font-bold text-orange-600">KI-Abo-Tracker</h1>
+      <div>
+        <h1 className="text-center text-3xl font-bold text-orange-600">Abo-Radar</h1>
+        <p className="mt-1 text-center text-sm text-gray-600">Dein intelligenter Abo-Wächter</p>
+      </div>
       <div className={cardClass}>
         <h2 className="mb-6 text-2xl font-bold text-gray-900">Anmelden</h2>
         <form onSubmit={handleSubmit} className="space-y-4">

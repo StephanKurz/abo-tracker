@@ -114,18 +114,18 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
   try {
     await sendMail({
       to: email,
-      subject: `${ownerName} hat dich zum Abo-Tracker eingeladen`,
+      subject: `${ownerName} hat dich zu Abo-Radar eingeladen`,
       html: `
         <p>Hallo,</p>
-        <p><strong>${ownerName}</strong> hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Tracker
+        <p><strong>${ownerName}</strong> hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Radar
         mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.</p>
         <p>${accountHint}</p>
         ${appUrl ? `<p><a href="${appUrl}${actionPath}">${actionLabel}</a></p>` : ""}
       `,
       text: [
-        `${ownerName} hat dich zum Abo-Tracker eingeladen`,
+        `${ownerName} hat dich zu Abo-Radar eingeladen`,
         "",
-        `${ownerName} hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Tracker mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.`,
+        `${ownerName} hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Radar mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.`,
         "",
         accountHint,
         ...(appUrl ? ["", `${actionLabel}: ${appUrl}${actionPath}`] : []),

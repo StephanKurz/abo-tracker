@@ -24,7 +24,7 @@ export async function submitFeedback(text: string): Promise<{ error: string | nu
   try {
     await sendMail({
       to: "stephan.kurz@gmx.de",
-      subject: "Abo-Tracker: Feedback",
+      subject: "Abo-Radar: Feedback",
       replyTo: userEmail,
       text: `${trimmed}\n\n${userEmail}`,
       html: `<p>${trimmed.replace(/\n/g, "<br>")}</p><p>${userEmail}</p>`,

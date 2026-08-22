@@ -41,7 +41,7 @@ export function RecommendWidget() {
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)} className={buttonSecondaryClass}>
-        Abo Tracker empfehlen
+        Abo-Radar empfehlen
       </button>
     );
   }

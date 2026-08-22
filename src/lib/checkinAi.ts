@@ -28,7 +28,9 @@ export type CheckinExtraction = {
   summary: string;
 };
 
-const SYSTEM_PROMPT = `Du bist der Extraktions-Assistent des "KI-Abo-Tracker", einer Abo-Verwaltung.
+const SYSTEM_PROMPT = `Du bist der Extraktions-Assistent von "Abo-Radar", einer Abo-Verwaltung.
+Alle Texte, die du erzeugst (summary, questions), sind auf Deutsch und sprechen die
+Person immer mit "du" an (klein geschrieben, niemals "Sie").
 Du erhältst den Text einer E-Mail, die ein Nutzer an sein Check-in-Postfach gesendet hat
 (z.B. eine weitergeleitete Bestellbestätigung, eine Rechnung oder ein formloser Satz),
 sowie die Liste seiner bestehenden Abos und Kategorien.
