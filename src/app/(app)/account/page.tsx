@@ -5,6 +5,7 @@ import { RatingCard } from "@/components/RatingCard";
 import { FeedbackCard } from "@/components/FeedbackCard";
 import { ShareAccessCard } from "@/components/ShareAccessCard";
 import { MyInvitesCard } from "@/components/MyInvitesCard";
+import { CheckinCard } from "@/components/CheckinCard";
 import type { CollaboratorStatus, InvitePermission } from "@/lib/sharing";
 
 export default async function AccountPage() {
@@ -17,22 +18,59 @@ export default async function AccountPage() {
     redirect("/login");
   }
 
-  const [{ data: profile }, { data: ownRating }, { data: ownOverview }, { data: feedbackRaw }] =
-    await Promise.all([
-      supabase.from("profiles").select("name, email, notify_days_before").eq("id", user.id).single(),
-      supabase.from("app_ratings").select("is_positive").eq("user_id", user.id).maybeSingle(),
-      supabase.from("overviews").select("owner_id").eq("owner_id", user.id).maybeSingle(),
-      supabase
-        .from("feedback")
-        .select("id, text, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
-    ]);
+  const [
+    { data: profile },
+    { data: ownRating },
+    { data: ownOverview },
+    { data: feedbackRaw },
+    { data: checkinSettingsRaw },
+    { data: checkinItemsRaw },
+  ] = await Promise.all([
+    supabase.from("profiles").select("name, email, notify_days_before").eq("id", user.id).single(),
+    supabase.from("app_ratings").select("is_positive").eq("user_id", user.id).maybeSingle(),
+    supabase.from("overviews").select("owner_id").eq("owner_id", user.id).maybeSingle(),
+    supabase
+      .from("feedback")
+      .select("id, text, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("checkin_settings")
+      .select("checkin_email, imap_host, imap_port, imap_user, enabled, last_polled_at, last_error")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("checkin_items")
+      .select("id, raw_subject, status, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
 
   const feedbackEntries = (feedbackRaw ?? []).map((f) => ({
     id: f.id,
     text: f.text,
     createdAt: f.created_at,
+  }));
+
+  const checkinSettings = checkinSettingsRaw
+    ? {
+        checkinEmail: checkinSettingsRaw.checkin_email,
+        imapHost: checkinSettingsRaw.imap_host,
+        imapPort: checkinSettingsRaw.imap_port,
+        imapUser: checkinSettingsRaw.imap_user,
+        hasPassword: true,
+        enabled: checkinSettingsRaw.enabled,
+        lastPolledAt: checkinSettingsRaw.last_polled_at,
+        lastError: checkinSettingsRaw.last_error,
+      }
+    : null;
+
+  const checkinItems = (checkinItemsRaw ?? []).map((i) => ({
+    id: i.id,
+    subject: i.raw_subject ?? "",
+    status: i.status,
+    createdAt: i.created_at,
   }));
 
   const [{ data: outgoingRaw }, { data: incomingRaw }] = await Promise.all([
@@ -94,7 +132,7 @@ export default async function AccountPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Mein Konto</h1>
+      <h1 className="text-2xl font-bold text-gray-900">Einstellungen</h1>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="flex flex-1 flex-col gap-4">
           <AccountForm
@@ -102,10 +140,11 @@ export default async function AccountPage() {
             email={profile?.email ?? user.email ?? ""}
             notifyDaysBefore={profile?.notify_days_before ?? null}
           />
-        </div>
-        <div className="flex flex-1 flex-col gap-4">
           <RatingCard rating={ownRating?.is_positive ?? null} />
           <FeedbackCard entries={feedbackEntries} />
+        </div>
+        <div className="flex flex-1 flex-col gap-4">
+          <CheckinCard settings={checkinSettings} items={checkinItems} />
           <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
           <MyInvitesCard invites={incomingInvites} />
         </div>

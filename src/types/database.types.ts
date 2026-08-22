@@ -33,6 +33,122 @@ export type Database = {
         }
         Relationships: []
       }
+      checkin_settings: {
+        Row: {
+          checkin_email: string
+          created_at: string
+          enabled: boolean
+          imap_host: string
+          imap_password_enc: string
+          imap_port: number
+          imap_user: string
+          last_error: string | null
+          last_polled_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checkin_email: string
+          created_at?: string
+          enabled?: boolean
+          imap_host: string
+          imap_password_enc: string
+          imap_port?: number
+          imap_user: string
+          last_error?: string | null
+          last_polled_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          checkin_email?: string
+          created_at?: string
+          enabled?: boolean
+          imap_host?: string
+          imap_password_enc?: string
+          imap_port?: number
+          imap_user?: string
+          last_error?: string | null
+          last_polled_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkin_items: {
+        Row: {
+          created_at: string
+          error: string | null
+          extracted: Json | null
+          id: string
+          kind: string | null
+          message_id: string | null
+          open_questions: string | null
+          raw_excerpt: string | null
+          raw_subject: string | null
+          status: string
+          subscription_id: string | null
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          extracted?: Json | null
+          id?: string
+          kind?: string | null
+          message_id?: string | null
+          open_questions?: string | null
+          raw_excerpt?: string | null
+          raw_subject?: string | null
+          status?: string
+          subscription_id?: string | null
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          extracted?: Json | null
+          id?: string
+          kind?: string | null
+          message_id?: string | null
+          open_questions?: string | null
+          raw_excerpt?: string | null
+          raw_subject?: string | null
+          status?: string
+          subscription_id?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_items_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string

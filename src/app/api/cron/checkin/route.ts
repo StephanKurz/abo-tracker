@@ -1,0 +1,457 @@
+import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
+import { ImapFlow } from "imapflow";
+import { simpleParser } from "mailparser";
+import { extractText } from "unpdf";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { decryptSecret } from "@/lib/checkinCrypto";
+import { extractSubscriptionFromEmail, type CheckinExtraction } from "@/lib/checkinAi";
+import { sendMail } from "@/lib/email";
+import {
+  BILLING_CYCLE_LABELS,
+  CANCELLATION_MODE_LABELS,
+  NOTICE_PERIOD_LABELS,
+  formatCurrency,
+  formatDate,
+} from "@/lib/subscriptions";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+const MAX_MAILS_PER_USER = 5;
+const MAX_TEXT_LENGTH = 8000;
+const TOKEN_RE = /\[Abo-Tracker #([A-Z0-9]{6,16})\]/i;
+
+type Admin = ReturnType<typeof createAdminClient>;
+
+type CheckinSettingsRow = {
+  user_id: string;
+  checkin_email: string;
+  imap_host: string;
+  imap_port: number;
+  imap_user: string;
+  imap_password_enc: string;
+};
+
+type ParsedMail = {
+  uid: number;
+  messageId: string | null;
+  subject: string;
+  fromAddress: string;
+  text: string;
+};
+
+function esc(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function newToken(): string {
+  return randomBytes(4).toString("hex").toUpperCase();
+}
+
+function describeFields(fields: CheckinExtraction["fields"], categoryName: string | null): string[] {
+  const rows: string[] = [];
+  if (fields.name) rows.push(`Name: ${fields.name}`);
+  if (fields.description) rows.push(`Beschreibung: ${fields.description}`);
+  if (categoryName) rows.push(`Kategorie: ${categoryName}`);
+  if (fields.billing_cycle) {
+    rows.push(`Abrechnung: ${BILLING_CYCLE_LABELS[fields.billing_cycle] ?? fields.billing_cycle}`);
+  }
+  if (fields.amount != null) rows.push(`Betrag: ${formatCurrency(fields.amount)}`);
+  if (fields.start_date) rows.push(`Abschlussdatum: ${formatDate(fields.start_date)}`);
+  if (fields.min_term_months != null) rows.push(`Mindestlaufzeit: ${fields.min_term_months} Monate`);
+  if (fields.cancellation_mode) {
+    rows.push(
+      `Kündigungsmodus: ${CANCELLATION_MODE_LABELS[fields.cancellation_mode] ?? fields.cancellation_mode}`,
+    );
+  }
+  if (fields.notice_period) {
+    rows.push(
+      `Kündigungsfrist: ${NOTICE_PERIOD_LABELS[fields.notice_period] ?? fields.notice_period}`,
+    );
+  }
+  if (fields.canceled_at) rows.push(`Gekündigt zum: ${formatDate(fields.canceled_at)}`);
+  return rows;
+}
+
+function listHtml(rows: string[]): string {
+  return rows.length > 0 ? `<ul>${rows.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
+}
+
+async function fetchUnseenMails(settings: CheckinSettingsRow): Promise<ParsedMail[]> {
+  const client = new ImapFlow({
+    host: settings.imap_host,
+    port: settings.imap_port,
+    secure: settings.imap_port === 993,
+    auth: { user: settings.imap_user, pass: decryptSecret(settings.imap_password_enc) },
+    logger: false,
+  });
+
+  await client.connect();
+  const collected: { uid: number; source: Buffer }[] = [];
+  try {
+    const lock = await client.getMailboxLock("INBOX");
+    try {
+      for await (const msg of client.fetch(
+        { seen: false },
+        { source: true, uid: true },
+        { uid: true },
+      )) {
+        if (collected.length >= MAX_MAILS_PER_USER) break;
+        if (msg.source) collected.push({ uid: msg.uid, source: msg.source });
+      }
+      for (const { uid } of collected) {
+        await client.messageFlagsAdd(String(uid), ["\\Seen"], { uid: true });
+      }
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout().catch(() => {});
+  }
+
+  const parsed: ParsedMail[] = [];
+  for (const { uid, source } of collected) {
+    const mail = await simpleParser(source);
+    let text = (mail.text ?? "").trim();
+    if (!text && mail.html) text = String(mail.html).replace(/<[^>]+>/g, " ").trim();
+
+    for (const att of mail.attachments ?? []) {
+      if (att.contentType === "application/pdf" && att.content) {
+        try {
+          const { text: pdfText } = await extractText(new Uint8Array(att.content), {
+            mergePages: true,
+          });
+          if (pdfText.trim()) {
+            text += `\n\n[PDF-Anhang "${att.filename ?? "Dokument"}"]\n${pdfText.trim().slice(0, MAX_TEXT_LENGTH)}`;
+          }
+        } catch {
+          // Nicht lesbare PDFs überspringen; der Mail-Text bleibt nutzbar
+        }
+      }
+    }
+
+    parsed.push({
+      uid,
+      messageId: mail.messageId ?? null,
+      subject: mail.subject ?? "",
+      fromAddress: mail.from?.value?.[0]?.address?.toLowerCase() ?? "",
+      text: text.slice(0, MAX_TEXT_LENGTH * 2),
+    });
+  }
+  return parsed;
+}
+
+// Wendet eine validierte Extraktion an (Neuanlage oder bestätigtes Update).
+// Gibt die Beschreibung für die Bestätigungs-Mail zurück oder wirft einen Fehler.
+async function applyExtraction(
+  admin: Admin,
+  userId: string,
+  extraction: CheckinExtraction,
+): Promise<{ verb: "angelegt" | "aktualisiert"; name: string; rows: string[] }> {
+  if (extraction.action === "update" && extraction.subscription_id) {
+    const updates: Record<string, unknown> = { ...extraction.fields };
+    const { data: updated, error } = await admin
+      .from("subscriptions")
+      .update({ ...updates, updated_by: userId, updated_at: new Date().toISOString() })
+      .eq("id", extraction.subscription_id)
+      .eq("user_id", userId)
+      .select("name")
+      .single();
+    if (error) throw new Error(error.message);
+    return {
+      verb: "aktualisiert",
+      name: updated.name,
+      rows: describeFields(extraction.fields, null),
+    };
+  }
+
+  // Neuanlage: Kategorie auflösen (vorhandene matchen, sonst anlegen)
+  const categoryName = extraction.category ?? "Sonstiges";
+  const { data: categories } = await admin
+    .from("categories")
+    .select("id, name")
+    .eq("user_id", userId);
+  let categoryId = (categories ?? []).find(
+    (c) => c.name.toLowerCase() === categoryName.toLowerCase(),
+  )?.id;
+  if (!categoryId) {
+    const { data: newCat, error: catError } = await admin
+      .from("categories")
+      .insert({ name: categoryName, user_id: userId, created_by: userId })
+      .select("id")
+      .single();
+    if (catError) throw new Error(catError.message);
+    categoryId = newCat.id;
+  }
+
+  const fields = extraction.fields;
+  const { error } = await admin.from("subscriptions").insert({
+    name: fields.name ?? "Unbenanntes Abo",
+    description: fields.description ?? null,
+    start_date: fields.start_date ?? null,
+    billing_cycle: fields.billing_cycle ?? "monthly",
+    min_term_months: fields.min_term_months ?? null,
+    amount: fields.amount ?? 0,
+    category_id: categoryId,
+    cancellation_mode: fields.cancellation_mode ?? null,
+    notice_period: fields.notice_period ?? null,
+    canceled_at: fields.canceled_at ?? null,
+    user_id: userId,
+    created_by: userId,
+  });
+  if (error) throw new Error(error.message);
+
+  return {
+    verb: "angelegt",
+    name: fields.name ?? "Unbenanntes Abo",
+    rows: describeFields(fields, categoryName),
+  };
+}
+
+async function processMail(
+  admin: Admin,
+  settings: CheckinSettingsRow,
+  profile: { email: string; name: string },
+  mail: ParsedMail,
+): Promise<void> {
+  // Antwort auf eine frühere Rückfrage?
+  const tokenMatch = mail.subject.match(TOKEN_RE);
+  const openItem = tokenMatch
+    ? (
+        await admin
+          .from("checkin_items")
+          .select("id, token, extracted, open_questions, kind")
+          .eq("user_id", settings.user_id)
+          .eq("token", tokenMatch[1].toUpperCase())
+          .eq("status", "question_sent")
+          .maybeSingle()
+      ).data
+    : null;
+
+  // Idempotenz nur für neue Mails (Antworten haben eigene Message-IDs)
+  if (!openItem && mail.messageId) {
+    const { data: dupe } = await admin
+      .from("checkin_items")
+      .select("id")
+      .eq("user_id", settings.user_id)
+      .eq("message_id", mail.messageId)
+      .maybeSingle();
+    if (dupe) return;
+  }
+
+  const [{ data: subs }, { data: cats }] = await Promise.all([
+    admin.from("subscriptions").select("id, name").eq("user_id", settings.user_id),
+    admin.from("categories").select("id, name").eq("user_id", settings.user_id),
+  ]);
+  const existingSubscriptions = subs ?? [];
+
+  const itemToken = openItem?.token ?? newToken();
+  let itemId = openItem?.id ?? null;
+  if (!itemId) {
+    const { data: inserted, error } = await admin
+      .from("checkin_items")
+      .insert({
+        user_id: settings.user_id,
+        message_id: mail.messageId,
+        token: itemToken,
+        status: "received",
+        raw_subject: mail.subject.slice(0, 500),
+        raw_excerpt: mail.text.slice(0, 500),
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    itemId = inserted.id;
+  }
+
+  let extraction: CheckinExtraction;
+  try {
+    extraction = await extractSubscriptionFromEmail({
+      mailSubject: mail.subject,
+      mailText: mail.text,
+      existingSubscriptions,
+      categories: cats ?? [],
+      previousExtraction: openItem ? ((openItem.extracted as CheckinExtraction) ?? null) : null,
+      previousQuestions: openItem?.open_questions ?? null,
+      userAnswer: openItem ? mail.text : null,
+    });
+  } catch (err) {
+    await admin
+      .from("checkin_items")
+      .update({
+        status: "failed",
+        error: err instanceof Error ? err.message : String(err),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", itemId);
+    throw err;
+  }
+
+  const kind =
+    extraction.action === "update"
+      ? "update_subscription"
+      : extraction.action === "create"
+        ? "new_subscription"
+        : (openItem?.kind ?? "unknown");
+
+  if (extraction.action === "reject") {
+    await admin
+      .from("checkin_items")
+      .update({ status: "rejected", updated_at: new Date().toISOString() })
+      .eq("id", itemId);
+    await sendMail({
+      to: profile.email,
+      subject: "Alles klar, nichts geändert",
+      html: `<p>Hallo ${esc(profile.name)},</p><p>der Vorschlag wurde verworfen. Es wurde nichts geändert.</p>`,
+      text: `Hallo ${profile.name},\n\nder Vorschlag wurde verworfen. Es wurde nichts geändert.`,
+    });
+    return;
+  }
+
+  // Unklar oder unbestätigtes Update: Rückfrage bzw. Änderungsvorschlag senden
+  const needsConfirmation = extraction.action === "update" && !openItem;
+  if (extraction.action === "unclear" || needsConfirmation) {
+    const questions =
+      extraction.questions.length > 0
+        ? extraction.questions
+        : needsConfirmation
+          ? ["Soll ich diese Änderung übernehmen? Antworte mit „Ja” oder mit Korrekturen."]
+          : ["Kannst du das Abo genauer beschreiben (Name, Betrag, Abrechnung)?"];
+    const targetName = extraction.subscription_id
+      ? (existingSubscriptions.find((s) => s.id === extraction.subscription_id)?.name ?? null)
+      : null;
+
+    await admin
+      .from("checkin_items")
+      .update({
+        status: "question_sent",
+        kind,
+        subscription_id: extraction.subscription_id,
+        extracted: extraction,
+        open_questions: questions.join("\n"),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", itemId);
+
+    const introHtml = needsConfirmation
+      ? `<p>deine Mail passt zu deinem bestehenden Abo${targetName ? ` <strong>${esc(targetName)}</strong>` : ""}. Ich schlage folgende Änderung vor:</p>${listHtml(describeFields(extraction.fields, null))}`
+      : `<p>zu deiner Check-in-Mail${mail.subject ? ` („${esc(mail.subject)}”)` : ""} habe ich noch Fragen:</p>`;
+    const introText = needsConfirmation
+      ? `deine Mail passt zu deinem bestehenden Abo${targetName ? ` "${targetName}"` : ""}. Ich schlage folgende Änderung vor:\n${describeFields(extraction.fields, null).join("\n")}`
+      : `zu deiner Check-in-Mail${mail.subject ? ` ("${mail.subject}")` : ""} habe ich noch Fragen:`;
+
+    await sendMail({
+      to: profile.email,
+      replyTo: settings.checkin_email,
+      subject: `${needsConfirmation ? "Änderungsvorschlag" : "Rückfrage zu deinem Abo-Check-in"} [Abo-Tracker #${itemToken}]`,
+      html: `<p>Hallo ${esc(profile.name)},</p>${introHtml}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
+      text: `Hallo ${profile.name},\n\n${introText}\n${questions.map((q) => `- ${q}`).join("\n")}\n\nAntworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.`,
+    });
+    return;
+  }
+
+  // Anwenden (Neuanlage direkt bzw. bestätigtes Update)
+  try {
+    const result = await applyExtraction(admin, settings.user_id, extraction);
+    await admin
+      .from("checkin_items")
+      .update({
+        status: "applied",
+        kind,
+        subscription_id: extraction.subscription_id,
+        extracted: extraction,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", itemId);
+    await sendMail({
+      to: profile.email,
+      subject: `Abo ${result.verb}: ${result.name}`,
+      html: `<p>Hallo ${esc(profile.name)},</p><p>${extraction.summary ? esc(extraction.summary) : `das Abo wurde ${result.verb}.`}</p>${listHtml(result.rows)}`,
+      text: `Hallo ${profile.name},\n\n${extraction.summary || `das Abo wurde ${result.verb}.`}\n${result.rows.join("\n")}`,
+    });
+  } catch (err) {
+    await admin
+      .from("checkin_items")
+      .update({
+        status: "failed",
+        error: err instanceof Error ? err.message : String(err),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", itemId);
+    throw err;
+  }
+}
+
+export async function GET(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  const admin = createAdminClient();
+  const { data: allSettings } = await admin
+    .from("checkin_settings")
+    .select("user_id, checkin_email, imap_host, imap_port, imap_user, imap_password_enc")
+    .eq("enabled", true);
+
+  let processed = 0;
+  const errors: string[] = [];
+
+  for (const settings of allSettings ?? []) {
+    try {
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("email, name")
+        .eq("id", settings.user_id)
+        .single();
+      if (!profile) continue;
+
+      // Ohne eigene Übersicht kann kein Abo zugeordnet werden
+      const { data: overview } = await admin
+        .from("overviews")
+        .select("owner_id")
+        .eq("owner_id", settings.user_id)
+        .maybeSingle();
+
+      const mails = await fetchUnseenMails(settings);
+
+      for (const mail of mails) {
+        // Nur Mails von der registrierten Nutzer-Adresse verarbeiten
+        if (mail.fromAddress !== profile.email.toLowerCase()) continue;
+        if (!mail.text.trim()) continue;
+
+        if (!overview) {
+          await sendMail({
+            to: profile.email,
+            subject: "Abo-Check-in: Bitte zuerst Übersicht anlegen",
+            html: `<p>Hallo ${esc(profile.name)},</p><p>deine Check-in-Mail konnte nicht verarbeitet werden, weil du noch keine eigene Abo-Übersicht hast. Lege sie zuerst in der App an und sende die Mail danach erneut.</p>`,
+            text: `Hallo ${profile.name},\n\ndeine Check-in-Mail konnte nicht verarbeitet werden, weil du noch keine eigene Abo-Übersicht hast. Lege sie zuerst in der App an und sende die Mail danach erneut.`,
+          });
+          continue;
+        }
+
+        await processMail(admin, settings, profile, mail);
+        processed++;
+      }
+
+      await admin
+        .from("checkin_settings")
+        .update({ last_polled_at: new Date().toISOString(), last_error: null })
+        .eq("user_id", settings.user_id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`${settings.checkin_email}: ${message}`);
+      await admin
+        .from("checkin_settings")
+        .update({ last_polled_at: new Date().toISOString(), last_error: message })
+        .eq("user_id", settings.user_id);
+    }
+  }
+
+  return NextResponse.json({ ok: true, processed, errors });
+}

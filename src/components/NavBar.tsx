@@ -14,7 +14,7 @@ const LINKS = [
   { href: "/subscriptions/new", label: "Neues Abo" },
   { href: "/categories", label: "Kategorien" },
   { href: "/print", label: "Drucken" },
-  { href: "/account", label: "Mein Konto" },
+  { href: "/account", label: "Einstellungen" },
 ];
 
 export function NavBar({
@@ -55,7 +55,7 @@ export function NavBar({
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-gray-900">Abo-Tracker</span>
+            <span className="text-lg font-bold text-gray-900">KI-Abo-Tracker</span>
             <RatingStar percentage={ratingPercentage} hasRated={hasRated} />
           </div>
           <div className="flex items-center gap-3 text-sm text-gray-700 sm:hidden">

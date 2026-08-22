@@ -106,8 +106,8 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   const accountHint = hasAccount
-    ? "Logg dich ein und nimm die Einladung unter „Mein Konto” an."
-    : `Du hast noch kein Konto? Registriere dich mit genau dieser E-Mail-Adresse (${email}), die Einladung erscheint danach automatisch unter „Mein Konto”.`;
+    ? "Logg dich ein und nimm die Einladung unter „Einstellungen” an."
+    : `Du hast noch kein Konto? Registriere dich mit genau dieser E-Mail-Adresse (${email}), die Einladung erscheint danach automatisch unter „Einstellungen”.`;
   const actionPath = hasAccount ? "/login" : "/register";
   const actionLabel = hasAccount ? "Jetzt einloggen" : "Jetzt registrieren";
 

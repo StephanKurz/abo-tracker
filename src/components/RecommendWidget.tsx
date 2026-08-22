@@ -47,7 +47,7 @@ export function RecommendWidget() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className="w-full space-y-3">
       <div>
         <label htmlFor="recommend-email" className="mb-1 block text-sm font-medium text-gray-700">
           E-Mail-Adresse
