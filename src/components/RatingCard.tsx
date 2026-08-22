@@ -24,10 +24,10 @@ export function RatingCard({ rating }: { rating: boolean | null }) {
       <h2 className="text-lg font-semibold text-gray-900">Deine Bewertung</h2>
       <p className="text-sm text-gray-600">
         {ratingValue == null
-          ? "Du hast den Abo-Tracker noch nicht bewertet."
+          ? "Du hast Abo-Radar noch nicht bewertet."
           : ratingValue
-            ? "Du hast den Abo-Tracker als „Super Tool” bewertet."
-            : "Du hast den Abo-Tracker als „taugt nix” bewertet."}
+            ? "Du hast Abo-Radar als „Super Tool” bewertet."
+            : "Du hast Abo-Radar als „taugt nix” bewertet."}
       </p>
 
       <div className="flex flex-wrap gap-3">

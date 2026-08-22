@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Abo-Tracker",
+  title: "Abo-Radar – Dein intelligenter Abo-Wächter",
   description: "Übersicht und Verwaltung aller privaten Abonnements",
 };
 

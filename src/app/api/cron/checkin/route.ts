@@ -22,7 +22,9 @@ export const maxDuration = 60;
 
 const MAX_MAILS_PER_USER = 5;
 const MAX_TEXT_LENGTH = 8000;
-const TOKEN_RE = /\[Abo-Tracker #([A-Z0-9]{6,16})\]/i;
+// "Abo-Tracker" nur übergangsweise, damit Antworten auf Rückfragen, die vor
+// der Umbenennung in "Abo-Radar" verschickt wurden, weiter zugeordnet werden.
+const TOKEN_RE = /\[(?:Abo-Radar|Abo-Tracker) #([A-Z0-9]{6,16})\]/i;
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -466,13 +468,33 @@ async function processMail(
 
   // Unklar oder unbestätigtes Update: Rückfrage bzw. Änderungsvorschlag senden
   const needsConfirmation = extraction.action === "update" && !openItem;
-  if (extraction.action === "unclear" || needsConfirmation) {
+
+  // Kategorie-Rückfrage vor der Neuanlage: Passt der KI-Vorschlag zu einer
+  // bestehenden Kategorie, wird direkt zugeordnet. Wäre eine NEUE Kategorie
+  // nötig (oder ist keine erkennbar), wird erst nachgefragt — nur in der
+  // ersten Runde, damit die Antwort des Nutzers nicht wieder eine Frage auslöst.
+  const categoryNames = (cats ?? []).map((c) => c.name);
+  const categoryExists =
+    extraction.category != null &&
+    categoryNames.some((n) => n.toLowerCase() === extraction.category!.toLowerCase());
+  const needsCategoryConfirmation =
+    extraction.action === "create" && !openItem && !categoryExists;
+
+  if (extraction.action === "unclear" || needsConfirmation || needsCategoryConfirmation) {
+    const categoryList =
+      categoryNames.length > 0 ? categoryNames.join(", ") : "noch keine vorhanden";
     const questions =
-      extraction.questions.length > 0
+      extraction.action === "unclear" && extraction.questions.length > 0
         ? extraction.questions
         : needsConfirmation
           ? ["Soll ich diese Änderung übernehmen? Antworte mit „Ja” oder mit Korrekturen."]
-          : ["Kannst du das Abo genauer beschreiben (Name, Betrag, Abrechnung)?"];
+          : needsCategoryConfirmation
+            ? [
+                extraction.category
+                  ? `Dafür würde ich die neue Kategorie „${extraction.category}” anlegen. Ist das ok? Antworte mit „Ja” oder nenne mir eine andere Kategorie (vorhanden: ${categoryList}).`
+                  : `Welcher Kategorie soll ich das Abo zuordnen? Vorhanden: ${categoryList} — oder nenne mir eine neue.`,
+              ]
+            : ["Kannst du das Abo genauer beschreiben (Name, Betrag, Abrechnung)?"];
     const targetName = extraction.subscription_id
       ? (existingSubscriptions.find((s) => s.id === extraction.subscription_id)?.name ?? null)
       : null;
@@ -491,15 +513,19 @@ async function processMail(
 
     const introHtml = needsConfirmation
       ? `<p>deine Mail passt zum bestehenden Abo${targetName ? ` <strong>${esc(targetName)}</strong>` : ""}. Ich schlage folgende Änderung vor:</p>${listHtml(describeFields(extraction.fields, null))}`
-      : `<p>zu deiner Check-in-Mail${mail.subject ? ` („${esc(mail.subject)}”)` : ""} habe ich noch Fragen:</p>`;
+      : needsCategoryConfirmation
+        ? `<p>ich habe folgendes Abo erkannt:</p>${listHtml(describeFields(extraction.fields, null))}`
+        : `<p>zu deiner Check-in-Mail${mail.subject ? ` („${esc(mail.subject)}”)` : ""} habe ich noch Fragen:</p>`;
     const introText = needsConfirmation
       ? `deine Mail passt zum bestehenden Abo${targetName ? ` "${targetName}"` : ""}. Ich schlage folgende Änderung vor:\n${describeFields(extraction.fields, null).join("\n")}`
-      : `zu deiner Check-in-Mail${mail.subject ? ` ("${mail.subject}")` : ""} habe ich noch Fragen:`;
+      : needsCategoryConfirmation
+        ? `ich habe folgendes Abo erkannt:\n${describeFields(extraction.fields, null).join("\n")}`
+        : `zu deiner Check-in-Mail${mail.subject ? ` ("${mail.subject}")` : ""} habe ich noch Fragen:`;
 
     await sendMail({
       to: sender.email,
       replyTo: settings.checkin_email,
-      subject: `${needsConfirmation ? "Änderungsvorschlag" : "Rückfrage zu deinem Abo-Check-in"} [Abo-Tracker #${itemToken}]`,
+      subject: `${needsConfirmation ? "Änderungsvorschlag" : "Rückfrage zu deinem Abo-Check-in"} [Abo-Radar #${itemToken}]`,
       html: `<p>Hallo ${esc(sender.name)},</p>${introHtml}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
       text: `Hallo ${sender.name},\n\n${introText}\n${questions.map((q) => `- ${q}`).join("\n")}\n\nAntworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.`,
     });

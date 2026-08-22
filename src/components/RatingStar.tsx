@@ -29,7 +29,7 @@ export function RatingStar({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        title={`${Math.round(clamped)}% bewerten den Abo-Tracker als "Super Tool" — klicken zum Bewerten`}
+        title={`${Math.round(clamped)}% bewerten Abo-Radar als "Super Tool" — klicken zum Bewerten`}
         className="relative inline-block h-5 w-5 shrink-0 text-xl leading-none"
       >
         <span className="absolute inset-0 overflow-hidden whitespace-nowrap text-gray-300">★</span>
@@ -53,7 +53,7 @@ export function RatingStar({
 
       {open && (
         <div className="absolute left-0 top-full z-20 mt-2 w-52 rounded-md border border-gray-300 bg-white p-3 text-sm shadow-lg">
-          <p className="mb-2 font-medium text-gray-900">Wie findest du den Abo-Tracker?</p>
+          <p className="mb-2 font-medium text-gray-900">Wie findest du Abo-Radar?</p>
           <button
             type="button"
             disabled={loading}

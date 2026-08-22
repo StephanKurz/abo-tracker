@@ -115,7 +115,7 @@ export function CheckinCard({
       <h2 className="text-lg font-semibold text-gray-900">E-Mail-Check-in</h2>
       <p className="text-sm text-gray-600">
         Leite Abo-Bestätigungen an dein Check-in-Postfach weiter oder beschreibe ein Abo formlos
-        per E-Mail — der KI-Abo-Tracker liest das Postfach regelmäßig aus und trägt die Abos
+        per E-Mail — Abo-Radar liest das Postfach regelmäßig aus und trägt die Abos
         automatisch ein. Bei Unklarheiten bekommst du eine Rückfrage per E-Mail.
       </p>
 
