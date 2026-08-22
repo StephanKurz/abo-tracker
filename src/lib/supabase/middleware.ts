@@ -11,6 +11,10 @@ const PUBLIC_PATHS = [
   "/auth",
   "/datenschutz",
   "/impressum",
+  // Cron-Endpunkte haben keine Session-Cookies und würden sonst auf /login
+  // umgeleitet, bevor ihr Handler läuft. Sie authentifizieren sich selbst
+  // über den Authorization-Header (CRON_SECRET).
+  "/api/cron",
 ];
 
 export async function updateSession(request: NextRequest) {
