@@ -8,7 +8,7 @@ export default function ImpressumPage() {
       <section className="space-y-1">
         <h2 className="text-lg font-semibold text-gray-900">Angaben gemäß § 5 TMG</h2>
         <p className="text-gray-700">
-          Kurz Intelligence
+          Kurz Intelligence™
           <br />
           [Straße, Hausnummer]
           <br />

@@ -126,7 +126,7 @@ export function PrintView({
       </div>
 
       <div className="print-only mt-2 hidden text-center text-xs text-gray-500">
-        © Kurz Intelligence - Reutlingen - kostenlose App
+        Kurz Intelligence™ - Reutlingen - kostenlose App
       </div>
     </div>
   );
