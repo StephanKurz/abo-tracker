@@ -22,6 +22,7 @@ export const maxDuration = 60;
 
 const MAX_MAILS_PER_USER = 5;
 const MAX_TEXT_LENGTH = 8000;
+const SPAM_NAME_HINTS = ["spam", "junk", "bulk"];
 // "Abo-Tracker" nur übergangsweise, damit Antworten auf Rückfragen, die vor
 // der Umbenennung in "Abo-Radar" verschickt wurden, weiter zugeordnet werden.
 const TOKEN_RE = /\[(?:Abo-Radar|Abo-Tracker) #([A-Z0-9]{6,16})\]/i;
@@ -130,6 +131,59 @@ function describeFields(fields: CheckinExtraction["fields"], categoryName: strin
 
 function listHtml(rows: string[]): string {
   return rows.length > 0 ? `<ul>${rows.map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>` : "";
+}
+
+/**
+ * Verschiebt ungelesene Mails von registrierten Absendern (Postfach-Besitzer
+ * oder Mitnutzer mit Schreibrechten) aus dem Spam-/Junk-Ordner ins INBOX, bevor
+ * die reguläre Verarbeitung läuft. Bewusst eng gefasst: nur bekannte Absender,
+ * kein pauschales Leeren des Spam-Ordners. Ein fehlender/unzugänglicher
+ * Spam-Ordner ist kein Fehler - die INBOX-Verarbeitung läuft trotzdem weiter.
+ */
+async function rescueFromSpam(
+  settings: CheckinSettingsRow,
+  senders: Map<string, Sender>,
+): Promise<void> {
+  const client = new ImapFlow({
+    host: settings.imap_host,
+    port: settings.imap_port,
+    secure: settings.imap_port === 993,
+    auth: { user: settings.imap_user, pass: decryptSecret(settings.imap_password_enc) },
+    logger: false,
+  });
+
+  await client.connect();
+  try {
+    const mailboxes = await client.list();
+    const spamBox =
+      mailboxes.find((box) => box.specialUse === "\\Junk") ??
+      mailboxes.find((box) => SPAM_NAME_HINTS.some((hint) => box.path.toLowerCase().includes(hint)));
+    if (!spamBox) return;
+
+    const lock = await client.getMailboxLock(spamBox.path);
+    try {
+      const candidates: number[] = [];
+      for await (const msg of client.fetch(
+        { seen: false },
+        { envelope: true, uid: true },
+        { uid: true },
+      )) {
+        if (candidates.length >= MAX_MAILS_PER_USER) break;
+        const from = msg.envelope?.from?.[0]?.address?.toLowerCase();
+        if (from && senders.has(from)) candidates.push(msg.uid);
+      }
+      if (candidates.length > 0) {
+        await client.messageMove(candidates, "INBOX", { uid: true });
+      }
+    } finally {
+      lock.release();
+    }
+  } catch {
+    // Spam-/Junk-Ordner nicht vorhanden oder nicht zugreifbar - kein
+    // harter Fehler, die reguläre INBOX-Verarbeitung läuft trotzdem weiter
+  } finally {
+    await client.logout().catch(() => {});
+  }
 }
 
 async function fetchUnseenMails(settings: CheckinSettingsRow): Promise<ParsedMail[]> {
@@ -597,6 +651,7 @@ export async function GET(request: Request) {
         .maybeSingle();
 
       const senders = await buildSenderMap(admin, settings.user_id, profile);
+      await rescueFromSpam(settings, senders);
       const mails = await fetchUnseenMails(settings);
 
       for (const mail of mails) {
