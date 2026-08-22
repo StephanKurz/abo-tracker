@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { decryptSecret } from "@/lib/checkinCrypto";
 import { extractSubscriptionFromEmail, type CheckinExtraction } from "@/lib/checkinAi";
 import { renderStatusMail, looksLikeStatusRequest, type StatusRow } from "@/lib/checkinStatusMail";
-import { sendMail } from "@/lib/email";
+import { sendMail, escapeHtml } from "@/lib/email";
 import { canWriteRow, type Role } from "@/lib/sharing";
 import {
   BILLING_CYCLE_LABELS,
@@ -99,14 +99,6 @@ async function buildSenderMap(
   return senders;
 }
 
-function esc(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 function newToken(): string {
   return randomBytes(4).toString("hex").toUpperCase();
 }
@@ -137,7 +129,7 @@ function describeFields(fields: CheckinExtraction["fields"], categoryName: strin
 }
 
 function listHtml(rows: string[]): string {
-  return rows.length > 0 ? `<ul>${rows.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
+  return rows.length > 0 ? `<ul>${rows.map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>` : "";
 }
 
 async function fetchUnseenMails(settings: CheckinSettingsRow): Promise<ParsedMail[]> {
@@ -460,7 +452,7 @@ async function processMail(
     await sendMail({
       to: sender.email,
       subject: "Alles klar, nichts geändert",
-      html: `<p>Hallo ${esc(sender.name)},</p><p>der Vorschlag wurde verworfen. Es wurde nichts geändert.</p>`,
+      html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>der Vorschlag wurde verworfen. Es wurde nichts geändert.</p>`,
       text: `Hallo ${sender.name},\n\nder Vorschlag wurde verworfen. Es wurde nichts geändert.`,
     });
     return;
@@ -512,10 +504,10 @@ async function processMail(
       .eq("id", itemId);
 
     const introHtml = needsConfirmation
-      ? `<p>deine Mail passt zum bestehenden Abo${targetName ? ` <strong>${esc(targetName)}</strong>` : ""}. Ich schlage folgende Änderung vor:</p>${listHtml(describeFields(extraction.fields, null))}`
+      ? `<p>deine Mail passt zum bestehenden Abo${targetName ? ` <strong>${escapeHtml(targetName)}</strong>` : ""}. Ich schlage folgende Änderung vor:</p>${listHtml(describeFields(extraction.fields, null))}`
       : needsCategoryConfirmation
         ? `<p>ich habe folgendes Abo erkannt:</p>${listHtml(describeFields(extraction.fields, null))}`
-        : `<p>zu deiner Check-in-Mail${mail.subject ? ` („${esc(mail.subject)}”)` : ""} habe ich noch Fragen:</p>`;
+        : `<p>zu deiner Check-in-Mail${mail.subject ? ` („${escapeHtml(mail.subject)}”)` : ""} habe ich noch Fragen:</p>`;
     const introText = needsConfirmation
       ? `deine Mail passt zum bestehenden Abo${targetName ? ` "${targetName}"` : ""}. Ich schlage folgende Änderung vor:\n${describeFields(extraction.fields, null).join("\n")}`
       : needsCategoryConfirmation
@@ -526,7 +518,7 @@ async function processMail(
       to: sender.email,
       replyTo: settings.checkin_email,
       subject: `${needsConfirmation ? "Änderungsvorschlag" : "Rückfrage zu deinem Abo-Check-in"} [Abo-Radar #${itemToken}]`,
-      html: `<p>Hallo ${esc(sender.name)},</p>${introHtml}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
+      html: `<p>Hallo ${escapeHtml(sender.name)},</p>${introHtml}${listHtml(questions)}<p>Antworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.</p>`,
       text: `Hallo ${sender.name},\n\n${introText}\n${questions.map((q) => `- ${q}`).join("\n")}\n\nAntworte einfach auf diese E-Mail — deine Antwort wird automatisch verarbeitet.`,
     });
     return;
@@ -548,7 +540,7 @@ async function processMail(
     await sendMail({
       to: sender.email,
       subject: `Abo ${result.verb}: ${result.name}`,
-      html: `<p>Hallo ${esc(sender.name)},</p><p>${extraction.summary ? esc(extraction.summary) : `das Abo wurde ${result.verb}.`}</p>${listHtml(result.rows)}`,
+      html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>${extraction.summary ? escapeHtml(extraction.summary) : `das Abo wurde ${result.verb}.`}</p>${listHtml(result.rows)}`,
       text: `Hallo ${sender.name},\n\n${extraction.summary || `das Abo wurde ${result.verb}.`}\n${result.rows.join("\n")}`,
     });
   } catch (err) {
@@ -564,7 +556,7 @@ async function processMail(
       await sendMail({
         to: sender.email,
         subject: "Änderung nicht möglich",
-        html: `<p>Hallo ${esc(sender.name)},</p><p>${esc(message)}</p>`,
+        html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>${escapeHtml(message)}</p>`,
         text: `Hallo ${sender.name},\n\n${message}`,
       });
       return;
@@ -618,7 +610,7 @@ export async function GET(request: Request) {
           await sendMail({
             to: sender.email,
             subject: "Abo-Check-in: Bitte zuerst Übersicht anlegen",
-            html: `<p>Hallo ${esc(sender.name)},</p><p>deine Check-in-Mail konnte nicht verarbeitet werden, weil noch keine Abo-Übersicht angelegt ist. Lege sie zuerst in der App an und sende die Mail danach erneut.</p>`,
+            html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>deine Check-in-Mail konnte nicht verarbeitet werden, weil noch keine Abo-Übersicht angelegt ist. Lege sie zuerst in der App an und sende die Mail danach erneut.</p>`,
             text: `Hallo ${sender.name},\n\ndeine Check-in-Mail konnte nicht verarbeitet werden, weil noch keine Abo-Übersicht angelegt ist. Lege sie zuerst in der App an und sende die Mail danach erneut.`,
           });
           continue;

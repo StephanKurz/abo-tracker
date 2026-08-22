@@ -12,7 +12,7 @@ export function SiteFooter() {
           Impressum
         </Link>
       </div>
-      <p className="mt-1">Kurz Intelligence™ - Reutlingen · Abo-Radar v0.83</p>
+      <p className="mt-1">Kurz Intelligence™ - Reutlingen · Abo-Radar v0.85</p>
     </footer>
   );
 }

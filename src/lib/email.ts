@@ -14,6 +14,17 @@ export function createTransporter() {
 
 const SIGNATURE_TEXT = `\n\nAbo-Radar – Dein intelligenter Abo-Wächter\nEin kostenloser Service von\nKurz Intelligence™`;
 
+// Zentrales HTML-Escaping für alle Stellen, die Nutzer- oder KI-Text in
+// E-Mail-HTML einsetzen. Verhindert, dass z.B. ein Abo-Name mit eingebettetem
+// Markup/Skript ungeschützt in eine HTML-Mail gelangt.
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 // Gebrandeter Rahmen für alle ausgehenden Mails: orangefarbene Kopfleiste,
 // weißer Inhaltsbereich, Signatur im Fußbereich. Nur Inline-CSS, damit es in
 // gängigen E-Mail-Programmen zuverlässig dargestellt wird.

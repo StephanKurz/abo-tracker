@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { sendMail } from "@/lib/email";
+import { sendMail, escapeHtml } from "@/lib/email";
 import { ACTIVE_OVERVIEW_COOKIE, PERMISSION_LABELS } from "@/lib/sharing";
 import type { Role } from "@/lib/sharing";
 import { resolveActiveOverview } from "@/lib/activeOverview";
@@ -105,9 +105,12 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
   const permissionLabel = PERMISSION_LABELS[permission as Role] ?? permission;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
-  const accountHint = hasAccount
+  const accountHintText = hasAccount
     ? "Logg dich ein und nimm die Einladung unter „Einstellungen” an."
     : `Du hast noch kein Konto? Registriere dich mit genau dieser E-Mail-Adresse (${email}), die Einladung erscheint danach automatisch unter „Einstellungen”.`;
+  const accountHintHtml = hasAccount
+    ? "Logg dich ein und nimm die Einladung unter „Einstellungen” an."
+    : `Du hast noch kein Konto? Registriere dich mit genau dieser E-Mail-Adresse (${escapeHtml(email)}), die Einladung erscheint danach automatisch unter „Einstellungen”.`;
   const actionPath = hasAccount ? "/login" : "/register";
   const actionLabel = hasAccount ? "Jetzt einloggen" : "Jetzt registrieren";
 
@@ -117,9 +120,9 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
       subject: `${ownerName} hat dich zu Abo-Radar eingeladen`,
       html: `
         <p>Hallo,</p>
-        <p><strong>${ownerName}</strong> hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Radar
+        <p><strong>${escapeHtml(ownerName)}</strong> hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Radar
         mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.</p>
-        <p>${accountHint}</p>
+        <p>${accountHintHtml}</p>
         ${appUrl ? `<p><a href="${appUrl}${actionPath}">${actionLabel}</a></p>` : ""}
       `,
       text: [
@@ -127,7 +130,7 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
         "",
         `${ownerName} hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Radar mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.`,
         "",
-        accountHint,
+        accountHintText,
         ...(appUrl ? ["", `${actionLabel}: ${appUrl}${actionPath}`] : []),
       ].join("\n"),
     });

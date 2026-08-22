@@ -1,4 +1,4 @@
-import { sendMail } from "@/lib/email";
+import { sendMail, escapeHtml } from "@/lib/email";
 import {
   BILLING_CYCLE_LABELS,
   CANCELLATION_MODE_LABELS,
@@ -52,14 +52,14 @@ export async function sendCancellationReminderEmail(
   ];
 
   const html = `
-    <h2>Kündigungserinnerung: ${sub.name}</h2>
-    <p>Hallo ${profile.name},</p>
-    <p>für dein Abo <strong>${sub.name}</strong> ist am <strong>${formatDate(targetDate)}</strong> das nächste Kündigungsdatum.</p>
+    <h2>Kündigungserinnerung: ${escapeHtml(sub.name)}</h2>
+    <p>Hallo ${escapeHtml(profile.name)},</p>
+    <p>für dein Abo <strong>${escapeHtml(sub.name)}</strong> ist am <strong>${formatDate(targetDate)}</strong> das nächste Kündigungsdatum.</p>
     <table cellpadding="4" cellspacing="0" style="border-collapse:collapse">
       ${rows
         .map(
           ([label, value]) =>
-            `<tr><td style="color:#6b7280;padding-right:12px">${label}</td><td>${value}</td></tr>`,
+            `<tr><td style="color:#6b7280;padding-right:12px">${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`,
         )
         .join("")}
     </table>

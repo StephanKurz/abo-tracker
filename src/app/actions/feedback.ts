@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sendMail } from "@/lib/email";
+import { sendMail, escapeHtml } from "@/lib/email";
 
 export async function submitFeedback(text: string): Promise<{ error: string | null }> {
   const trimmed = text.trim();
@@ -27,7 +27,7 @@ export async function submitFeedback(text: string): Promise<{ error: string | nu
       subject: "Abo-Radar: Feedback",
       replyTo: userEmail,
       text: `${trimmed}\n\n${userEmail}`,
-      html: `<p>${trimmed.replace(/\n/g, "<br>")}</p><p>${userEmail}</p>`,
+      html: `<p>${escapeHtml(trimmed).replace(/\n/g, "<br>")}</p><p>${escapeHtml(userEmail)}</p>`,
     });
   } catch {
     // Feedback ist bereits gespeichert; E-Mail-Zustellung ist best-effort
