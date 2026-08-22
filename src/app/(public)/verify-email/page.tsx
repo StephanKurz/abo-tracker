@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { sendWelcomeEmail } from "@/app/actions/welcome";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { inputClass, buttonPrimaryClass, buttonSecondaryClass, cardClass } from "@/components/ui/formStyles";
 
@@ -34,6 +35,14 @@ function VerifyEmailForm() {
     if (verifyError) {
       setError(verifyError.message);
       return;
+    }
+
+    // Willkommensmail mit Bedienungsanleitung — best-effort, blockiert den
+    // Einstieg nicht, falls der Versand fehlschlägt
+    try {
+      await sendWelcomeEmail();
+    } catch {
+      // bewusst ignoriert
     }
 
     router.push("/dashboard");

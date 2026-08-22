@@ -5,6 +5,14 @@
 
 const ORANGE = "#ea580c";
 
+function esc(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function section(number: number, title: string, contentHtml: string): string {
   return `
     <table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 20px 0;">
@@ -38,7 +46,7 @@ export function renderWelcomeMail(input: {
       : `<strong>${label}</strong>`;
 
   const html = `
-    <p style="font-size:14px;color:#374151;">Hallo ${name},</p>
+    <p style="font-size:14px;color:#374151;">Hallo ${esc(name)},</p>
     <p style="font-size:14px;color:#374151;line-height:1.6;">
       willkommen bei <strong>Abo-Radar</strong> — deinem intelligenten Abo-Wächter!
       Hier behältst du alle Abonnements, Kosten und Kündigungsfristen im Blick.
