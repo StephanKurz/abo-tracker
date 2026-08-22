@@ -18,7 +18,7 @@ export const NOTICE_PERIOD_LABELS: Record<string, string> = {
   "1_month": "1 Monat",
   "3_months": "3 Monate",
   end_of_year: "3 Monate zum Jahresende",
-  anytime: "jederzeit",
+  anytime: "jederzeit (bis zum Vortag der Verlängerung)",
   yearly: "jährlich",
 };
 
