@@ -23,6 +23,7 @@ export const maxDuration = 60;
 const MAX_MAILS_PER_USER = 5;
 const MAX_TEXT_LENGTH = 8000;
 const SPAM_NAME_HINTS = ["spam", "junk", "bulk"];
+const TRASH_NAME_HINTS = ["trash", "deleted", "gelöscht", "papierkorb"];
 // "Abo-Tracker" nur übergangsweise, damit Antworten auf Rückfragen, die vor
 // der Umbenennung in "Abo-Radar" verschickt wurden, weiter zugeordnet werden.
 const TOKEN_RE = /\[(?:Abo-Radar|Abo-Tracker) #([A-Z0-9]{6,16})\]/i;
@@ -134,6 +135,23 @@ function listHtml(rows: string[]): string {
 }
 
 /**
+ * Sucht einen Ordner zuerst über sein SPECIAL-USE-Attribut (RFC 6154), dann
+ * als Rückfallebene über typische Namensbestandteile.
+ */
+function findMailboxPath(
+  mailboxes: Awaited<ReturnType<ImapFlow["list"]>>,
+  specialUse: string,
+  nameHints: string[],
+): string | null {
+  const byUse = mailboxes.find((box) => box.specialUse === specialUse);
+  if (byUse) return byUse.path;
+  const byName = mailboxes.find((box) =>
+    nameHints.some((hint) => box.path.toLowerCase().includes(hint)),
+  );
+  return byName?.path ?? null;
+}
+
+/**
  * Verschiebt ungelesene Mails von registrierten Absendern (Postfach-Besitzer
  * oder Mitnutzer mit Schreibrechten) aus dem Spam-/Junk-Ordner ins INBOX, bevor
  * die reguläre Verarbeitung läuft. Bewusst eng gefasst: nur bekannte Absender,
@@ -155,12 +173,10 @@ async function rescueFromSpam(
   await client.connect();
   try {
     const mailboxes = await client.list();
-    const spamBox =
-      mailboxes.find((box) => box.specialUse === "\\Junk") ??
-      mailboxes.find((box) => SPAM_NAME_HINTS.some((hint) => box.path.toLowerCase().includes(hint)));
-    if (!spamBox) return;
+    const spamPath = findMailboxPath(mailboxes, "\\Junk", SPAM_NAME_HINTS);
+    if (!spamPath) return;
 
-    const lock = await client.getMailboxLock(spamBox.path);
+    const lock = await client.getMailboxLock(spamPath);
     try {
       const candidates: number[] = [];
       for await (const msg of client.fetch(
@@ -186,7 +202,14 @@ async function rescueFromSpam(
   }
 }
 
-async function fetchUnseenMails(settings: CheckinSettingsRow): Promise<ParsedMail[]> {
+/**
+ * Holt ALLE Mails aus dem INBOX — unabhängig davon, ob sie gelesen sind.
+ * Das INBOX ist die alleinige Arbeitsschlange: Jede Mail, die dort liegt, wird
+ * verarbeitet und anschließend über moveHandledMails() herausbewegt (Trash bzw.
+ * Spam). Der Gelesen-Status spielt bewusst keine Rolle mehr, damit z. B. eine
+ * versehentlich als „gelesen” markierte Mail nicht stillschweigend liegen bleibt.
+ */
+async function fetchInboxMails(settings: CheckinSettingsRow): Promise<ParsedMail[]> {
   const client = new ImapFlow({
     host: settings.imap_host,
     port: settings.imap_port,
@@ -200,16 +223,9 @@ async function fetchUnseenMails(settings: CheckinSettingsRow): Promise<ParsedMai
   try {
     const lock = await client.getMailboxLock("INBOX");
     try {
-      for await (const msg of client.fetch(
-        { seen: false },
-        { source: true, uid: true },
-        { uid: true },
-      )) {
+      for await (const msg of client.fetch("1:*", { source: true, uid: true }, { uid: true })) {
         if (collected.length >= MAX_MAILS_PER_USER) break;
         if (msg.source) collected.push({ uid: msg.uid, source: msg.source });
-      }
-      for (const { uid } of collected) {
-        await client.messageFlagsAdd(String(uid), ["\\Seen"], { uid: true });
       }
     } finally {
       lock.release();
@@ -248,6 +264,51 @@ async function fetchUnseenMails(settings: CheckinSettingsRow): Promise<ParsedMai
     });
   }
   return parsed;
+}
+
+/**
+ * Räumt das INBOX nach der Verarbeitung auf: abgearbeitete Mails wandern in den
+ * Papierkorb („Gelöschte Objekte”), Mails unberechtigter Absender unverarbeitet
+ * in den Spam-Ordner. So ist das INBOX nach jedem Lauf leer und der Ordner
+ * selbst dokumentiert, was mit jeder Mail passiert ist. Fehlt ein Papierkorb,
+ * wird „Trash” angelegt; fehlt ein Spam-Ordner, landen auch unberechtigte
+ * Mails im Papierkorb.
+ */
+async function moveHandledMails(
+  settings: CheckinSettingsRow,
+  toTrash: number[],
+  toSpam: number[],
+): Promise<void> {
+  if (toTrash.length === 0 && toSpam.length === 0) return;
+
+  const client = new ImapFlow({
+    host: settings.imap_host,
+    port: settings.imap_port,
+    secure: settings.imap_port === 993,
+    auth: { user: settings.imap_user, pass: decryptSecret(settings.imap_password_enc) },
+    logger: false,
+  });
+
+  await client.connect();
+  try {
+    const mailboxes = await client.list();
+    let trashPath = findMailboxPath(mailboxes, "\\Trash", TRASH_NAME_HINTS);
+    if (!trashPath) {
+      trashPath = "Trash";
+      await client.mailboxCreate(trashPath).catch(() => {});
+    }
+    const spamPath = findMailboxPath(mailboxes, "\\Junk", SPAM_NAME_HINTS) ?? trashPath;
+
+    const lock = await client.getMailboxLock("INBOX");
+    try {
+      if (toTrash.length > 0) await client.messageMove(toTrash, trashPath, { uid: true });
+      if (toSpam.length > 0) await client.messageMove(toSpam, spamPath, { uid: true });
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout().catch(() => {});
+  }
 }
 
 /**
@@ -652,14 +713,28 @@ export async function GET(request: Request) {
 
       const senders = await buildSenderMap(admin, settings.user_id, profile);
       await rescueFromSpam(settings, senders);
-      const mails = await fetchUnseenMails(settings);
+      const mails = await fetchInboxMails(settings);
+
+      // Jede Mail im INBOX wird abschließend behandelt: verarbeitete (auch
+      // fehlgeschlagene, der Fehler steht dann in checkin_items) wandern in
+      // den Papierkorb, unberechtigte Absender unverarbeitet in den Spam.
+      const toTrash: number[] = [];
+      const toSpam: number[] = [];
+      const mailErrors: string[] = [];
 
       for (const mail of mails) {
         // Nur Mails von berechtigten Absendern verarbeiten: der Besitzer des
         // Postfachs sowie Mitnutzer mit Schreibrechten auf seine Übersicht.
         const sender = senders.get(mail.fromAddress);
-        if (!sender) continue;
-        if (!mail.text.trim()) continue;
+        if (!sender) {
+          toSpam.push(mail.uid);
+          continue;
+        }
+
+        if (!mail.text.trim()) {
+          toTrash.push(mail.uid);
+          continue;
+        }
 
         if (!overview) {
           await sendMail({
@@ -668,16 +743,32 @@ export async function GET(request: Request) {
             html: `<p>Hallo ${escapeHtml(sender.name)},</p><p>deine Check-in-Mail konnte nicht verarbeitet werden, weil noch keine Abo-Übersicht angelegt ist. Lege sie zuerst in der App an und sende die Mail danach erneut.</p>`,
             text: `Hallo ${sender.name},\n\ndeine Check-in-Mail konnte nicht verarbeitet werden, weil noch keine Abo-Übersicht angelegt ist. Lege sie zuerst in der App an und sende die Mail danach erneut.`,
           });
+          toTrash.push(mail.uid);
           continue;
         }
 
-        await processMail(admin, settings, sender, profile.name, mail);
-        processed++;
+        try {
+          await processMail(admin, settings, sender, profile.name, mail);
+          processed++;
+        } catch (err) {
+          mailErrors.push(
+            `${mail.fromAddress}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+        toTrash.push(mail.uid);
       }
 
+      await moveHandledMails(settings, toTrash, toSpam);
+
+      if (mailErrors.length > 0) {
+        errors.push(...mailErrors.map((m) => `${settings.checkin_email}: ${m}`));
+      }
       await admin
         .from("checkin_settings")
-        .update({ last_polled_at: new Date().toISOString(), last_error: null })
+        .update({
+          last_polled_at: new Date().toISOString(),
+          last_error: mailErrors.length > 0 ? mailErrors.join("; ") : null,
+        })
         .eq("user_id", settings.user_id);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
