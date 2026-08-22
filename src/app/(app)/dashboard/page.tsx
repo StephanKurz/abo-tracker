@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardTable } from "@/components/DashboardTable";
 import { CreateOverviewCard } from "@/components/CreateOverviewCard";
-import { buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
+import { buttonPrimaryClass, buttonSecondaryClass, cardClass } from "@/components/ui/formStyles";
 import { resolveActiveOverview } from "@/lib/activeOverview";
 import { countPendingInvites } from "@/lib/sharing";
 
@@ -73,13 +73,23 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-4">
       {inviteBanner}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Abo-Übersicht</h1>
-        {canCreate && (
-          <Link href="/subscriptions/new" className={buttonPrimaryClass}>
-            + Neues Abo
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Abo-Übersicht</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            von der Person, die die Abo-Übersicht angelegt hat (nicht der Person, die Zugriff hat).
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {canCreate && (
+            <Link href="/subscriptions/new" className={buttonPrimaryClass}>
+              Neues Abo
+            </Link>
+          )}
+          <Link href="/print" className={buttonSecondaryClass}>
+            Drucken
           </Link>
-        )}
+        </div>
       </div>
       <DashboardTable subscriptions={rows} viewerId={user.id} role={active.role} />
     </div>

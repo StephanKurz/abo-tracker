@@ -39,12 +39,20 @@ type CheckinSettingsRow = {
   imap_password_enc: string;
 };
 
+/** Von Claude direkt lesbare Bildformate (Vision-Unterstützung der Messages API). */
+const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+const MAX_IMAGES_PER_MAIL = 3;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+type ParsedImage = { mediaType: string; base64: string };
+
 type ParsedMail = {
   uid: number;
   messageId: string | null;
   subject: string;
   fromAddress: string;
   text: string;
+  images: ParsedImage[];
 };
 
 /** Person, die eine Check-in-Mail senden darf, mit ihrer Rolle auf der Übersicht. */
@@ -278,6 +286,7 @@ async function fetchInboxMails(settings: CheckinSettingsRow): Promise<ParsedMail
     let text = (mail.text ?? "").trim();
     if (!text && mail.html) text = String(mail.html).replace(/<[^>]+>/g, " ").trim();
 
+    const images: ParsedImage[] = [];
     for (const att of mail.attachments ?? []) {
       if (att.contentType === "application/pdf" && att.content) {
         try {
@@ -290,6 +299,13 @@ async function fetchInboxMails(settings: CheckinSettingsRow): Promise<ParsedMail
         } catch {
           // Nicht lesbare PDFs überspringen; der Mail-Text bleibt nutzbar
         }
+      } else if (
+        SUPPORTED_IMAGE_TYPES.has(att.contentType) &&
+        att.content &&
+        images.length < MAX_IMAGES_PER_MAIL &&
+        att.content.byteLength <= MAX_IMAGE_BYTES
+      ) {
+        images.push({ mediaType: att.contentType, base64: att.content.toString("base64") });
       }
     }
 
@@ -299,6 +315,7 @@ async function fetchInboxMails(settings: CheckinSettingsRow): Promise<ParsedMail
       subject: sanitizeText(mail.subject ?? ""),
       fromAddress: mail.from?.value?.[0]?.address?.toLowerCase() ?? "",
       text: sanitizeText(text).slice(0, MAX_TEXT_LENGTH * 2),
+      images,
     });
   }
   return parsed;
@@ -551,6 +568,7 @@ async function processMail(
     extraction = await extractSubscriptionFromEmail({
       mailSubject: mail.subject,
       mailText: mail.text,
+      images: mail.images,
       existingSubscriptions,
       categories: cats ?? [],
       previousExtraction: openItem ? ((openItem.extracted as CheckinExtraction) ?? null) : null,
@@ -810,7 +828,7 @@ export async function GET(request: Request) {
           continue;
         }
 
-        if (!mail.text.trim()) {
+        if (!mail.text.trim() && mail.images.length === 0) {
           toTrash.push(mail.uid);
           skippedEmpty++;
           continue;

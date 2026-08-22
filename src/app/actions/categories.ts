@@ -30,7 +30,7 @@ export async function createCategory(formData: FormData) {
     };
   }
 
-  revalidatePath("/categories");
+  revalidatePath("/account");
   revalidatePath("/subscriptions/new");
   return { error: null };
 }
@@ -68,7 +68,7 @@ export async function renameCategory(id: string, name: string) {
     };
   }
 
-  revalidatePath("/categories");
+  revalidatePath("/account");
   revalidatePath("/subscriptions/new");
   return { error: null };
 }
@@ -103,7 +103,7 @@ export async function deleteCategory(id: string) {
     };
   }
 
-  revalidatePath("/categories");
+  revalidatePath("/account");
   revalidatePath("/subscriptions/new");
   return { error: null };
 }

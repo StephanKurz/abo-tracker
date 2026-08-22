@@ -17,6 +17,11 @@ export type StatusRow = Subscription & { category_name: string };
 const TD = 'style="padding:4px 8px;border-top:1px solid #e5e7eb;"';
 const TH = 'style="padding:4px 8px;text-align:left;font-weight:bold;color:#6b7280;"';
 
+// Feste Spaltenbreiten für alle Kategorie-Tabellen, damit sie untereinander
+// bündig ausgerichtet sind (nicht abhängig vom jeweiligen Inhalt der Kategorie).
+const COLUMN_WIDTHS = [12, 30, 16, 14, 14, 14];
+const COLGROUP = `<colgroup>${COLUMN_WIDTHS.map((w) => `<col style="width:${w}%;">`).join("")}</colgroup>`;
+
 function totalsFor(rows: StatusRow[]) {
   const yearly = rows.reduce((sum, s) => sum + (s.yearly_cost ?? 0), 0);
   return { yearly, monthly: yearly / 12, count: rows.length };
@@ -94,7 +99,8 @@ export function renderStatusMail(input: {
       return `
         <div style="margin:0 0 16px 0;">
           <div style="font-weight:bold;color:#ea580c;margin-bottom:4px;">${esc(category)}</div>
-          <table style="width:100%;border-collapse:collapse;font-size:13px;color:#111827;">
+          <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px;color:#111827;">
+            ${COLGROUP}
             <thead>
               <tr>
                 <th ${TH}>Status</th>
