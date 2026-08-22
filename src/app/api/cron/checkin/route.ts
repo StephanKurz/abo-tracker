@@ -600,21 +600,51 @@ async function processMail(
   const needsCategoryConfirmation =
     extraction.action === "create" && !openItem && !categoryExists;
 
-  if (extraction.action === "unclear" || needsConfirmation || needsCategoryConfirmation) {
+  // Pflichtangaben zur Kündigung: Fehlen Kündigungsmodus oder -frist bei einer
+  // Neuanlage, wird nachgefragt — gebündelt in derselben Rückfrage wie die
+  // Kategorie, damit eine einzige Antwort alles klären kann. Nur in der ersten
+  // Runde, damit eine unvollständige Antwort keine Endlosschleife auslöst.
+  const missingCancellationQuestions: string[] = [];
+  if (extraction.action === "create" && !openItem) {
+    if (!extraction.fields.cancellation_mode) {
+      missingCancellationQuestions.push(
+        `Wie ist das Abo kündbar? Mögliche Optionen: ${Object.values(CANCELLATION_MODE_LABELS).join(", ")}.`,
+      );
+    }
+    if (!extraction.fields.notice_period) {
+      missingCancellationQuestions.push(
+        `Welche Kündigungsfrist gilt? Mögliche Optionen: ${Object.values(NOTICE_PERIOD_LABELS).join(", ")}.`,
+      );
+    }
+  }
+  const needsCancellationInfo = missingCancellationQuestions.length > 0;
+
+  if (
+    extraction.action === "unclear" ||
+    needsConfirmation ||
+    needsCategoryConfirmation ||
+    needsCancellationInfo
+  ) {
     const categoryList =
       categoryNames.length > 0 ? categoryNames.join(", ") : "noch keine vorhanden";
-    const questions =
-      extraction.action === "unclear" && extraction.questions.length > 0
-        ? extraction.questions
-        : needsConfirmation
-          ? ["Soll ich diese Änderung übernehmen? Antworte mit „Ja” oder mit Korrekturen."]
-          : needsCategoryConfirmation
-            ? [
-                extraction.category
-                  ? `Dafür würde ich die neue Kategorie „${extraction.category}” anlegen. Ist das ok? Antworte mit „Ja” oder nenne mir eine andere Kategorie (vorhanden: ${categoryList}).`
-                  : `Welcher Kategorie soll ich das Abo zuordnen? Vorhanden: ${categoryList} — oder nenne mir eine neue.`,
-              ]
-            : ["Kannst du das Abo genauer beschreiben (Name, Betrag, Abrechnung)?"];
+    const questions: string[] = [];
+    if (extraction.action === "unclear" && extraction.questions.length > 0) {
+      questions.push(...extraction.questions);
+    } else if (needsConfirmation) {
+      questions.push("Soll ich diese Änderung übernehmen? Antworte mit „Ja” oder mit Korrekturen.");
+    } else {
+      if (needsCategoryConfirmation) {
+        questions.push(
+          extraction.category
+            ? `Dafür würde ich die neue Kategorie „${extraction.category}” anlegen. Ist das ok? Antworte mit „Ja” oder nenne mir eine andere Kategorie (vorhanden: ${categoryList}).`
+            : `Welcher Kategorie soll ich das Abo zuordnen? Vorhanden: ${categoryList} — oder nenne mir eine neue.`,
+        );
+      }
+      questions.push(...missingCancellationQuestions);
+      if (questions.length === 0) {
+        questions.push("Kannst du das Abo genauer beschreiben (Name, Betrag, Abrechnung)?");
+      }
+    }
     const targetName = extraction.subscription_id
       ? (existingSubscriptions.find((s) => s.id === extraction.subscription_id)?.name ?? null)
       : null;
@@ -633,12 +663,12 @@ async function processMail(
 
     const introHtml = needsConfirmation
       ? `<p>deine Mail passt zum bestehenden Abo${targetName ? ` <strong>${escapeHtml(targetName)}</strong>` : ""}. Ich schlage folgende Änderung vor:</p>${listHtml(describeFields(extraction.fields, null))}`
-      : needsCategoryConfirmation
+      : needsCategoryConfirmation || needsCancellationInfo
         ? `<p>ich habe folgendes Abo erkannt:</p>${listHtml(describeFields(extraction.fields, null))}`
         : `<p>zu deiner Check-in-Mail${mail.subject ? ` („${escapeHtml(mail.subject)}”)` : ""} habe ich noch Fragen:</p>`;
     const introText = needsConfirmation
       ? `deine Mail passt zum bestehenden Abo${targetName ? ` "${targetName}"` : ""}. Ich schlage folgende Änderung vor:\n${describeFields(extraction.fields, null).join("\n")}`
-      : needsCategoryConfirmation
+      : needsCategoryConfirmation || needsCancellationInfo
         ? `ich habe folgendes Abo erkannt:\n${describeFields(extraction.fields, null).join("\n")}`
         : `zu deiner Check-in-Mail${mail.subject ? ` ("${mail.subject}")` : ""} habe ich noch Fragen:`;
 
