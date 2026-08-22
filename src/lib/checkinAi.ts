@@ -20,7 +20,7 @@ export type CheckinFields = {
 };
 
 export type CheckinExtraction = {
-  action: "create" | "update" | "unclear" | "reject";
+  action: "create" | "update" | "unclear" | "reject" | "status";
   subscription_id: string | null;
   fields: CheckinFields;
   category: string | null;
@@ -45,6 +45,13 @@ Entscheide:
 - "unclear": Es ist nicht erkennbar, worum es geht, oder für "create" fehlen Pflichtangaben.
 - "reject": NUR bei einer Antwort auf eine Rückfrage: Der Nutzer lehnt den Vorschlag ab
   (z.B. "Nein", "verwerfen", "abbrechen"). Dann keine Änderung durchführen.
+- "status": Der Nutzer will keine Änderung, sondern eine Auskunft über seinen Abo-Bestand.
+  Dazu zählen ausdrückliche Anfragen ("Abo Status", "Schick mir die Übersicht",
+  "Wie sieht meine Abo-Lage aus?") UND Bestandsfragen zu einem einzelnen Abo
+  ("Ist das Abo Netflix schon drin?", "Hab ich Spotify schon erfasst?").
+  Bei einer Bestandsfrage beantworte sie in summary konkret anhand der Liste der
+  bestehenden Abos, z.B. "Ja, Netflix Premium ist bereits erfasst." oder
+  "Nein, ein Abo für Spotify ist noch nicht angelegt." Es werden keine Felder benötigt.
 
 Pflichtfelder für "create": name, billing_cycle, amount. Fehlt davon etwas oder ist etwas
 mehrdeutig, wähle "unclear" und formuliere in questions kurze, konkrete Fragen auf Deutsch.
@@ -63,7 +70,7 @@ Feldformate:
 - summary: 1-2 deutsche Sätze, was du erkannt hast (wird dem Nutzer per Mail geschickt).
 
 Antworte AUSSCHLIESSLICH mit einem JSON-Objekt exakt dieser Form, ohne Markdown:
-{"action":"create|update|unclear|reject","subscription_id":"...oder null","fields":{...},"category":"...oder null","questions":["..."],"summary":"..."}`;
+{"action":"create|update|unclear|reject|status","subscription_id":"...oder null","fields":{...},"category":"...oder null","questions":["..."],"summary":"..."}`;
 
 export async function extractSubscriptionFromEmail(input: {
   mailSubject: string;
@@ -173,7 +180,7 @@ export function validateExtraction(
   const rawFields = (obj.fields ?? {}) as Record<string, unknown>;
 
   let action =
-    asEnum(obj.action, ["create", "update", "unclear", "reject"] as const) ?? "unclear";
+    asEnum(obj.action, ["create", "update", "unclear", "reject", "status"] as const) ?? "unclear";
 
   let subscriptionId = asString(obj.subscription_id, 100);
   if (subscriptionId && !existingSubscriptions.some((s) => s.id === subscriptionId)) {
