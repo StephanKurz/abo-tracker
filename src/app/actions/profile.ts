@@ -56,7 +56,7 @@ export async function updateProfileName(formData: FormData) {
     };
   }
 
-  revalidatePath("/account");
+  revalidatePath("/profile");
   revalidatePath("/dashboard");
   return { error: null };
 }

@@ -79,35 +79,39 @@ export function DashboardTable({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4">
-        <div className="flex flex-1 flex-wrap gap-6 rounded-lg bg-white p-4 shadow-md">
-          <h2 className="w-full text-sm font-semibold text-gray-700">Alle Abos</h2>
-          <div className="text-center">
-            <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Jahr</p>
-            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearly)}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Monat</p>
-            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthly)}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs font-bold text-orange-600">Anzahl Abos</p>
-            <p className="text-xl font-bold text-gray-900">{subscriptions.length}</p>
+        <div className="flex flex-1 flex-col items-center gap-3 rounded-lg bg-white p-4 shadow-md">
+          <h2 className="text-lg font-bold text-orange-600">Alle Abos</h2>
+          <div className="flex flex-wrap justify-center gap-6">
+            <div className="text-center">
+              <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Jahr</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearly)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Monat</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthly)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-bold text-orange-600">Anzahl Abos</p>
+              <p className="text-xl font-bold text-gray-900">{subscriptions.length}</p>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-1 flex-wrap gap-6 rounded-lg bg-white p-4 shadow-md">
-          <h2 className="w-full text-sm font-semibold text-gray-700">Ungekündigte Abos</h2>
-          <div className="text-center">
-            <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Jahr</p>
-            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearlyUncanceled)}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Monat</p>
-            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthlyUncanceled)}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs font-bold text-orange-600">Anzahl Abos</p>
-            <p className="text-xl font-bold text-gray-900">{activeUncanceled.length}</p>
+        <div className="flex flex-1 flex-col items-center gap-3 rounded-lg bg-white p-4 shadow-md">
+          <h2 className="text-lg font-bold text-orange-600">Ungekündigte Abos</h2>
+          <div className="flex flex-wrap justify-center gap-6">
+            <div className="text-center">
+              <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Jahr</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(totalYearlyUncanceled)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Monat</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(totalMonthlyUncanceled)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-bold text-orange-600">Anzahl Abos</p>
+              <p className="text-xl font-bold text-gray-900">{activeUncanceled.length}</p>
+            </div>
           </div>
         </div>
       </div>
