@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardTable } from "@/components/DashboardTable";
 import { CreateOverviewCard } from "@/components/CreateOverviewCard";
-import { buttonPrimaryClass, buttonSecondaryClass, cardClass } from "@/components/ui/formStyles";
+import { PrintPdfButton } from "@/components/PrintPdfButton";
+import { buttonPrimaryClass, cardClass } from "@/components/ui/formStyles";
 import { resolveActiveOverview } from "@/lib/activeOverview";
 import { countPendingInvites } from "@/lib/sharing";
 
@@ -86,9 +87,7 @@ export default async function DashboardPage() {
               Neues Abo
             </Link>
           )}
-          <Link href="/print" className={buttonSecondaryClass}>
-            Drucken
-          </Link>
+          <PrintPdfButton rows={rows} />
         </div>
       </div>
       <DashboardTable subscriptions={rows} viewerId={user.id} role={active.role} />

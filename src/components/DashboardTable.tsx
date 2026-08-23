@@ -13,11 +13,12 @@ import { canWriteRow } from "@/lib/sharing";
 import type { Subscription } from "@/lib/subscriptions";
 import type { Role } from "@/lib/sharing";
 
-type Row = Subscription & {
+export type DashboardRow = Subscription & {
   category_name: string;
   created_by_name: string;
   updated_by_name: string | null;
 };
+type Row = DashboardRow;
 type SortColumn = "startDate" | "nextCancellation";
 
 export function DashboardTable({

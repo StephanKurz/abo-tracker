@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sendMail, escapeHtml } from "@/lib/email";
+import { createFeedbackTask } from "@/lib/todoist";
 
 export async function submitFeedback(text: string): Promise<{ error: string | null }> {
   const trimmed = text.trim();
@@ -22,15 +22,9 @@ export async function submitFeedback(text: string): Promise<{ error: string | nu
   if (insertError) return { error: insertError.message };
 
   try {
-    await sendMail({
-      to: "stephan.kurz@gmx.de",
-      subject: "Abo-Radar: Feedback",
-      replyTo: userEmail,
-      text: `${trimmed}\n\n${userEmail}`,
-      html: `<p>${escapeHtml(trimmed).replace(/\n/g, "<br>")}</p><p>${escapeHtml(userEmail)}</p>`,
-    });
+    await createFeedbackTask(trimmed, userEmail);
   } catch {
-    // Feedback ist bereits gespeichert; E-Mail-Zustellung ist best-effort
+    // Feedback ist bereits gespeichert; Todoist-Übertragung ist best-effort
   }
 
   return { error: null };
