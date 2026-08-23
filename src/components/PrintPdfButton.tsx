@@ -9,6 +9,7 @@ import {
   isFullyExpired,
 } from "@/lib/subscriptions";
 import type { DashboardRow } from "@/components/DashboardTable";
+import { APP_VERSION } from "@/lib/version";
 
 // jsPDFs Standardschriften decken nur WinAnsi (cp1252/Latin-1) ab. Intl kann je
 // nach Laufzeit-ICU ein geschütztes oder schmales Leerzeichen zwischen Betrag
@@ -18,15 +19,34 @@ function pdfCurrency(amount: number | null | undefined): string {
   return formatCurrency(amount).replace(/[\u00A0\u202F]/g, " ");
 }
 
+// Lädt das App-Icon als Data-URL für den PDF-Kopf. Best-effort: schlägt der
+// Abruf fehl, wird die PDF trotzdem erzeugt, nur ohne Icon.
+async function loadAppIconDataUrl(): Promise<string | null> {
+  try {
+    const res = await fetch("/icon.png");
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; ownerName: string }) {
   const [generating, setGenerating] = useState(false);
 
   async function handleDownload() {
     setGenerating(true);
     try {
-      const [{ jsPDF }, { autoTable }] = await Promise.all([
+      const [{ jsPDF }, { autoTable }, iconDataUrl] = await Promise.all([
         import("jspdf"),
         import("jspdf-autotable"),
+        loadAppIconDataUrl(),
       ]);
 
       const active = rows.filter((s) => !isFullyExpired(s));
@@ -51,15 +71,21 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
       const pageWidth = doc.internal.pageSize.getWidth();
       const marginX = 14;
 
+      const iconSize = 10;
+      const titleX = iconDataUrl ? marginX + iconSize + 3 : marginX;
+      if (iconDataUrl) {
+        doc.addImage(iconDataUrl, "PNG", marginX, 5, iconSize, iconSize);
+      }
+
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(234, 88, 12); // orange-600
-      doc.text(`Abo-Übersicht — ${ownerName}`, marginX, 16);
+      doc.text(`Abo-Radar — ${ownerName}`, titleX, 13);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(107, 114, 128); // gray-500
-      doc.text(`Stand: ${formatDate(new Date())}`, marginX, 22);
+      doc.text(`Stand: ${formatDate(new Date())}`, titleX, 19);
 
       function summaryBox(x: number, width: number, title: string, stats: [string, string][]) {
         const y = 28;
@@ -103,7 +129,7 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
         doc.setTextColor(107, 114, 128); // gray-500
-        doc.text("Kurz Intelligence™ - Reutlingen - kostenlose App", marginX, pageHeight - 8);
+        doc.text(`Abo-Radar ${APP_VERSION}`, marginX, pageHeight - 8);
         doc.text(`Seite ${pageNumber}`, pageWidth - marginX, pageHeight - 8, { align: "right" });
       }
 
