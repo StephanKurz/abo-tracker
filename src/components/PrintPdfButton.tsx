@@ -107,23 +107,34 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
         doc.text(`Seite ${pageNumber}`, pageWidth - marginX, pageHeight - 8, { align: "right" });
       }
 
+      const CENTER_COLUMNS = new Set([0]);
+      const RIGHT_COLUMNS = new Set([4, 5, 6, 7]);
+
       autoTable(doc, {
         startY: 60,
         margin: { left: marginX, right: marginX, bottom: 16 },
         styles: { fontSize: 8, cellPadding: 2, textColor: [55, 65, 81] },
-        headStyles: { fillColor: [234, 88, 12], textColor: 255, fontStyle: "bold" },
+        headStyles: {
+          fillColor: [234, 88, 12],
+          textColor: 255,
+          fontStyle: "bold",
+          overflow: "visible", // Spaltenköpfe dürfen nie umbrechen
+        },
         didDrawPage: (data) => drawFooter(data.pageNumber),
         columnStyles: {
-          0: { cellWidth: 18, halign: "center" },
+          0: { cellWidth: 18 },
           1: { cellWidth: "auto" },
-          2: { cellWidth: 32 },
-          3: { cellWidth: 24 },
-          4: { cellWidth: 22, halign: "right" },
-          5: { cellWidth: 26, halign: "right" },
-          6: { cellWidth: 26, halign: "right" },
-          7: { cellWidth: 26, halign: "right" },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 22 },
+          4: { cellWidth: 22 },
+          5: { cellWidth: 26 },
+          6: { cellWidth: 32 },
+          7: { cellWidth: 26 },
         },
         didParseCell: (data) => {
+          // Ausrichtung des Spaltenkopfs folgt immer der Ausrichtung des Inhalts.
+          if (CENTER_COLUMNS.has(data.column.index)) data.cell.styles.halign = "center";
+          if (RIGHT_COLUMNS.has(data.column.index)) data.cell.styles.halign = "right";
           if (data.section === "body" && data.column.index === 0) {
             const sub = sorted[data.row.index];
             data.cell.styles.textColor = sub.canceled_at ? [220, 38, 38] : [22, 163, 74];
