@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ObfuscatedEmail } from "@/components/ObfuscatedEmail";
 
 export default function ImpressumPage() {
   return (
@@ -6,13 +7,13 @@ export default function ImpressumPage() {
       <h1 className="text-2xl font-bold text-gray-900">Impressum</h1>
 
       <section className="space-y-1">
-        <h2 className="text-lg font-semibold text-gray-900">Angaben gemäß § 5 TMG</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Angaben gemäß § 5 DDG</h2>
         <p className="text-gray-700">
           Kurz Intelligence™
           <br />
-          [Straße, Hausnummer]
+          Hans-Sachs-Str. 44
           <br />
-          [PLZ] Reutlingen
+          72760 Reutlingen
           <br />
           Deutschland
         </p>
@@ -20,31 +21,15 @@ export default function ImpressumPage() {
 
       <section className="space-y-1">
         <h2 className="text-lg font-semibold text-gray-900">Vertreten durch</h2>
-        <p className="text-gray-700">[Name der vertretungsberechtigten Person]</p>
+        <p className="text-gray-700">Stephan Kurz</p>
       </section>
 
       <section className="space-y-1">
         <h2 className="text-lg font-semibold text-gray-900">Kontakt</h2>
         <p className="text-gray-700">
-          Telefon: [Telefonnummer]
+          Telefon: 0176 / 1623-0777
           <br />
-          E-Mail: [E-Mail-Adresse]
-        </p>
-      </section>
-
-      <section className="space-y-1">
-        <h2 className="text-lg font-semibold text-gray-900">Registereintrag</h2>
-        <p className="text-gray-700">
-          [Eintragung im Handelsregister, Registergericht und Registernummer, falls vorhanden]
-        </p>
-      </section>
-
-      <section className="space-y-1">
-        <h2 className="text-lg font-semibold text-gray-900">Umsatzsteuer-ID</h2>
-        <p className="text-gray-700">
-          Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:
-          <br />
-          [USt-IdNr., falls vorhanden]
+          E-Mail: <ObfuscatedEmail user="abo" domain="mykurz.de" />
         </p>
       </section>
 
@@ -53,16 +38,13 @@ export default function ImpressumPage() {
           Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
         </h2>
         <p className="text-gray-700">
-          [Name]
+          Stephan Kurz
           <br />
-          [Anschrift wie oben]
+          Hans-Sachs-Str. 44
+          <br />
+          72760 Reutlingen
         </p>
       </section>
-
-      <p className="text-xs text-gray-500">
-        Diese Seite enthält noch Platzhalter (in eckigen Klammern), die durch die tatsächlichen
-        Angaben zu ersetzen sind.
-      </p>
 
       <Link href="/login" className="text-orange-600 hover:underline">
         Zurück
