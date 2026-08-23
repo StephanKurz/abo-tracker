@@ -214,7 +214,7 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
       disabled={generating}
       aria-label="PDF herunterladen"
       title="PDF herunterladen"
-      className="inline-flex items-center justify-center rounded-md border border-gray-400 bg-white p-2 text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex items-center justify-center rounded-md bg-orange-600 p-2 text-white shadow-sm hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-400"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
