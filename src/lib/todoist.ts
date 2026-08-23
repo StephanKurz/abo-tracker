@@ -1,7 +1,8 @@
-// Erstellt eine Todoist-Aufgabe aus Nutzer-Feedback. Projekt/Abschnitt sind in
-// Todoist per Name vorgegeben (nicht als feste ID hinterlegt, da Feedback
-// selten genug eintrifft, dass der zusätzliche Namens-Lookup nicht ins
-// Gewicht fällt und robuster gegenüber künftigen Umbenennungen ist).
+// Erstellt Todoist-Aufgaben (Feedback aus der App, eingehende Kontakt-Mails).
+// Projekt/Abschnitt sind in Todoist per Name vorgegeben (nicht als feste ID
+// hinterlegt, da beide Quellen selten genug eintreffen, dass der zusätzliche
+// Namens-Lookup nicht ins Gewicht fällt und robuster gegenüber künftigen
+// Umbenennungen ist).
 
 const API = "https://api.todoist.com/rest/v2";
 const PROJECT_NAME = "Softwareprojekte";
@@ -21,7 +22,11 @@ async function todoistFetch<T>(path: string, token: string, init?: RequestInit):
   return res.json();
 }
 
-export async function createFeedbackTask(text: string, userEmail: string): Promise<void> {
+/**
+ * Legt eine Aufgabe im festen Ziel (Projekt "Softwareprojekte" -> Abschnitt
+ * "Apps Kurz-Intelligence", Label "Abo-Radar", fällig heute) an.
+ */
+export async function createTodoistTask(content: string, description: string): Promise<void> {
   const token = process.env.TODOIST_API_TOKEN;
   if (!token) throw new Error("TODOIST_API_TOKEN ist nicht gesetzt.");
 
@@ -36,18 +41,33 @@ export async function createFeedbackTask(text: string, userEmail: string): Promi
   const section = sections.find((s) => s.name === SECTION_NAME);
   if (!section) throw new Error(`Todoist-Abschnitt "${SECTION_NAME}" nicht gefunden.`);
 
-  const preview = text.length > 80 ? `${text.slice(0, 80)}…` : text;
   const today = new Date().toISOString().slice(0, 10);
 
   await todoistFetch("/tasks", token, {
     method: "POST",
     body: JSON.stringify({
-      content: `Abo-Radar Feedback: ${preview}`,
-      description: `${text}\n\n${userEmail}`,
+      content,
+      description,
       project_id: project.id,
       section_id: section.id,
       labels: [LABEL],
       due_date: today,
     }),
   });
+}
+
+export async function createFeedbackTask(text: string, userEmail: string): Promise<void> {
+  const preview = text.length > 80 ? `${text.slice(0, 80)}…` : text;
+  await createTodoistTask(`Abo-Radar Feedback: ${preview}`, `${text}\n\n${userEmail}`);
+}
+
+export async function createContactEmailTask(input: {
+  from: string;
+  subject: string;
+  text: string;
+}): Promise<void> {
+  const subject = input.subject || "(ohne Betreff)";
+  const preview = subject.length > 80 ? `${subject.slice(0, 80)}…` : subject;
+  const description = [`Von: ${input.from}`, `Betreff: ${subject}`, "", input.text].join("\n");
+  await createTodoistTask(`Kontaktanfrage: ${preview}`, description);
 }
