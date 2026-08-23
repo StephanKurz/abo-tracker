@@ -18,7 +18,7 @@ function pdfCurrency(amount: number | null | undefined): string {
   return formatCurrency(amount).replace(/[\u00A0\u202F]/g, " ");
 }
 
-export function PrintPdfButton({ rows }: { rows: DashboardRow[] }) {
+export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; ownerName: string }) {
   const [generating, setGenerating] = useState(false);
 
   async function handleDownload() {
@@ -54,7 +54,7 @@ export function PrintPdfButton({ rows }: { rows: DashboardRow[] }) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(234, 88, 12); // orange-600
-      doc.text("Abo-Übersicht", marginX, 16);
+      doc.text(`Abo-Übersicht — ${ownerName}`, marginX, 16);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
@@ -98,11 +98,21 @@ export function PrintPdfButton({ rows }: { rows: DashboardRow[] }) {
         ["Anzahl", String(activeUncanceled.length)],
       ]);
 
+      const pageHeight = doc.internal.pageSize.getHeight();
+      function drawFooter(pageNumber: number) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(107, 114, 128); // gray-500
+        doc.text("Kurz Intelligence™ - Reutlingen - kostenlose App", marginX, pageHeight - 8);
+        doc.text(`Seite ${pageNumber}`, pageWidth - marginX, pageHeight - 8, { align: "right" });
+      }
+
       autoTable(doc, {
         startY: 60,
-        margin: { left: marginX, right: marginX },
+        margin: { left: marginX, right: marginX, bottom: 16 },
         styles: { fontSize: 8, cellPadding: 2, textColor: [55, 65, 81] },
         headStyles: { fillColor: [234, 88, 12], textColor: 255, fontStyle: "bold" },
+        didDrawPage: (data) => drawFooter(data.pageNumber),
         columnStyles: {
           0: { cellWidth: 18, halign: "center" },
           1: { cellWidth: "auto" },

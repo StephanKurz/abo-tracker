@@ -87,7 +87,7 @@ export default async function DashboardPage() {
               Neues Abo
             </Link>
           )}
-          <PrintPdfButton rows={rows} />
+          <PrintPdfButton rows={rows} ownerName={active.ownerName} />
         </div>
       </div>
       <DashboardTable subscriptions={rows} viewerId={user.id} role={active.role} />
