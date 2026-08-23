@@ -74,13 +74,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-4">
       {inviteBanner}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Abo-Übersicht</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            von der Person, die die Abo-Übersicht angelegt hat (nicht der Person, die Zugriff hat).
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-gray-900">Übersicht von {active.ownerName}</h1>
         <div className="flex flex-wrap items-center gap-2">
           {canCreate && (
             <Link href="/subscriptions/new" className={buttonPrimaryClass}>

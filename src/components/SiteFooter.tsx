@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { APP_VERSION } from "@/lib/version";
 
 export function SiteFooter() {
   return (
@@ -12,7 +13,7 @@ export function SiteFooter() {
           Impressum
         </Link>
       </div>
-      <p className="mt-1">Kurz Intelligence™ - Reutlingen · Abo-Radar v0.87</p>
+      <p className="mt-1">Kurz Intelligence™ - Reutlingen · Abo-Radar {APP_VERSION}</p>
     </footer>
   );
 }
