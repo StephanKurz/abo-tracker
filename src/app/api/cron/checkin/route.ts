@@ -155,17 +155,24 @@ const RESEARCHED_FIELD_LABELS: Record<string, string> = {
 
 /**
  * Hinweise für die Antwort-Mails: welche Kündigungsangaben die KI aus dem
- * allgemeinen Wissen über den Anbieter ergänzt hat (statt aus der Mail) und
+ * allgemeinen Wissen über den Anbieter ergänzt hat (statt aus der Mail), ob
+ * das Abschlussdatum aus einer Rechnung/den Unterlagen abgeleitet wurde, und
  * ob Angaben in der Mail von den üblichen Anbieter-Bedingungen abweichen.
  */
 function extractionNotes(extraction: CheckinExtraction): string[] {
   const notes: string[] = [];
-  if (extraction.researched_fields.length > 0) {
-    const labels = extraction.researched_fields
-      .map((f) => RESEARCHED_FIELD_LABELS[f] ?? f)
-      .join(" und ");
+  const cancellationFields = extraction.researched_fields.filter(
+    (f) => f === "cancellation_mode" || f === "notice_period",
+  );
+  if (cancellationFields.length > 0) {
+    const labels = cancellationFields.map((f) => RESEARCHED_FIELD_LABELS[f] ?? f).join(" und ");
     notes.push(
       `Hinweis: ${labels} stand nicht in deiner Mail — ich habe die Angabe aus den allgemein üblichen Vertragsbedingungen des Anbieters ergänzt. Bitte prüfe sie und antworte mit einer Korrektur, falls sie nicht stimmt.`,
+    );
+  }
+  if (extraction.researched_fields.includes("start_date")) {
+    notes.push(
+      `Hinweis: Das Abschlussdatum stand nicht ausdrücklich in deiner Mail — ich habe es aus der Rechnung bzw. den Unterlagen ausgelesen. Bitte prüfe es und antworte mit einer Korrektur, falls es nicht stimmt.`,
     );
   }
   if (extraction.knowledge_note) notes.push(`Hinweis: ${extraction.knowledge_note}`);

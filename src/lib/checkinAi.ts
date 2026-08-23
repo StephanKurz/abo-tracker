@@ -19,8 +19,13 @@ export type CheckinFields = {
   canceled_at?: string | null;
 };
 
-/** Kündigungsfelder, die die KI aus Anbieter-Wissen statt aus der Mail füllen darf. */
-export type ResearchedField = "cancellation_mode" | "notice_period";
+/**
+ * Felder, die die KI nicht direkt aus einer expliziten Angabe in der Mail
+ * übernommen, sondern selbst ermittelt hat: cancellation_mode/notice_period
+ * aus allgemeinem Anbieter-Wissen, start_date aus dem Rechnungsdatum bzw.
+ * dem ältesten Eintrag einer Rechnungsübersicht.
+ */
+export type ResearchedField = "cancellation_mode" | "notice_period" | "start_date";
 
 export type CheckinExtraction = {
   action: "create" | "update" | "unclear" | "reject" | "status";
@@ -72,7 +77,16 @@ mehrdeutig, wähle "unclear" und formuliere in questions kurze, konkrete Fragen 
 Feldformate:
 - name: kurzer Abo-Name (z.B. "Netflix Premium")
 - description: optionale Zusatzinfo oder null
-- start_date / canceled_at: "YYYY-MM-DD" oder null
+- start_date: "YYYY-MM-DD" oder null. Bei "create" IMMER aus den Unterlagen erschließen,
+  falls kein explizites Abschluss-/Startdatum genannt ist: Ist eine Rechnung oder
+  Rechnungsübersicht beigefügt (Text, PDF-Anhang oder Bild), gilt ersatzweise das
+  Rechnungsdatum, bzw. bei einer Übersicht mit mehreren Einträgen das Datum des ERSTEN
+  (ältesten) Eintrags, als start_date. Nur wenn sich wirklich kein Datum aus den
+  Unterlagen ableiten lässt, bleibt start_date null. Wurde start_date auf diese Weise
+  hergeleitet (also NICHT als Abschluss-/Startdatum ausdrücklich in der Mail genannt),
+  führe "start_date" in "researched_fields" auf, damit der Nutzer darauf hingewiesen wird,
+  es zu prüfen.
+- canceled_at: "YYYY-MM-DD" oder null
 - billing_cycle: "monthly" oder "yearly"
 - amount: Betrag in Euro pro Abrechnungseinheit als Zahl (z.B. 12.99)
 - min_term_months: Mindestlaufzeit in Monaten als Zahl oder null
@@ -96,7 +110,7 @@ Kündigungsmodus und Kündigungsfrist recherchieren:
   knowledge_note auf null setzen.
 
 Antworte AUSSCHLIESSLICH mit einem JSON-Objekt exakt dieser Form, ohne Markdown:
-{"action":"create|update|unclear|reject|status","subscription_id":"...oder null","fields":{...},"category":"...oder null","questions":["..."],"summary":"...","researched_fields":["cancellation_mode","notice_period"],"knowledge_note":"...oder null"}`;
+{"action":"create|update|unclear|reject|status","subscription_id":"...oder null","fields":{...},"category":"...oder null","questions":["..."],"summary":"...","researched_fields":["cancellation_mode","notice_period","start_date"],"knowledge_note":"...oder null"}`;
 
 const SUPPORTED_IMAGE_MEDIA_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
 type SupportedImageMediaType = (typeof SUPPORTED_IMAGE_MEDIA_TYPES)[number];
@@ -282,7 +296,8 @@ export function validateExtraction(
           obj.researched_fields.filter(
             (f): f is ResearchedField =>
               (f === "cancellation_mode" && fields.cancellation_mode != null) ||
-              (f === "notice_period" && fields.notice_period != null),
+              (f === "notice_period" && fields.notice_period != null) ||
+              (f === "start_date" && fields.start_date != null),
           ),
         ),
       )
