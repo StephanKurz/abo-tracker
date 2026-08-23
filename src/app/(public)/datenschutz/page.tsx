@@ -19,8 +19,11 @@ export default function DatenschutzPage() {
           Abo-, Kategorie- und Profildaten sind durch Datenbankregeln (Row Level Security)
           grundsätzlich ausschließlich für den jeweils angemeldeten Benutzer selbst einsehbar und
           bearbeitbar. Nach der Registrierung wird zunächst keine Abo-Übersicht angelegt — das
-          entscheidest du selbst. Es gibt keinen zentralen Administrator von Abo-Radar, der in
-          irgendeiner Form Zugriff auf diese Daten hätte.
+          entscheidest du selbst.{" "}
+          <strong>
+            Es gibt keinen zentralen Administrator von Abo-Radar, der in irgendeiner Form Zugriff
+            auf diese Daten hätte.
+          </strong>
         </p>
         <p className="text-gray-700">
           Über die Funktion „Zugriff teilen” in deinem „Profil” kannst du eine andere, bereits
@@ -54,6 +57,8 @@ export default function DatenschutzPage() {
           Abo-Übersicht, nie an eingeladene Personen.
         </p>
       </section>
+
+      <p className="text-sm text-gray-500">Stand: 23.08.2026</p>
 
       <Link href="/login" className="text-orange-600 hover:underline">
         Zurück

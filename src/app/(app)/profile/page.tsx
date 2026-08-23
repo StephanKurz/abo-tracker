@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileCard } from "@/components/ProfileCard";
+import { PasswordCard } from "@/components/PasswordCard";
 import { ShareAccessCard } from "@/components/ShareAccessCard";
 import type { CollaboratorStatus, InvitePermission } from "@/lib/sharing";
 
@@ -59,10 +60,15 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Profil</h1>
-      <div className="mx-auto flex max-w-2xl flex-col gap-4">
-        <ProfileCard name={profile?.name ?? ""} email={profile?.email ?? user.email ?? ""} />
-        <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="flex-1">
+          <ProfileCard name={profile?.name ?? ""} email={profile?.email ?? user.email ?? ""} />
+        </div>
+        <div className="flex-1">
+          <PasswordCard />
+        </div>
       </div>
+      <ShareAccessCard hasOverview={!!ownOverview} collaborators={outgoingCollaborators} />
     </div>
   );
 }

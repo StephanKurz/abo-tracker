@@ -56,9 +56,9 @@ export function CategoriesManager({
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`${cardClass} space-y-4`}>
       {canAdd && (
-        <form onSubmit={handleCreate} className={`${cardClass} flex flex-wrap items-end gap-3`}>
+        <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-3">
           <div className="min-w-[200px] flex-1">
             <FieldLabel required htmlFor="new-category">
               Neue Kategorie
@@ -80,11 +80,10 @@ export function CategoriesManager({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className={cardClass}>
-        {categories.length === 0 ? (
-          <p className="text-sm text-gray-600">Noch keine Kategorien angelegt.</p>
-        ) : (
-          <ul className="divide-y divide-gray-200">
+      {categories.length === 0 ? (
+        <p className="text-sm text-gray-600">Noch keine Kategorien angelegt.</p>
+      ) : (
+        <ul className="divide-y divide-gray-200">
             {categories.map((category) => {
               const canEdit = canWriteRow(role, viewerId, category.created_by);
               return (
@@ -138,9 +137,8 @@ export function CategoriesManager({
                 </li>
               );
             })}
-          </ul>
-        )}
-      </div>
+        </ul>
+      )}
     </div>
   );
 }

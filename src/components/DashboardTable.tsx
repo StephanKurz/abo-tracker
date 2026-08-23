@@ -80,7 +80,7 @@ export function DashboardTable({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4">
         <div className="flex flex-1 flex-col items-center gap-3 rounded-lg bg-white p-4 shadow-md">
-          <h2 className="text-lg font-bold text-orange-600">Alle Abos</h2>
+          <h2 className="text-lg font-bold text-gray-900">Alle Abos</h2>
           <div className="flex flex-wrap justify-center gap-6">
             <div className="text-center">
               <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Jahr</p>
@@ -98,7 +98,7 @@ export function DashboardTable({
         </div>
 
         <div className="flex flex-1 flex-col items-center gap-3 rounded-lg bg-white p-4 shadow-md">
-          <h2 className="text-lg font-bold text-orange-600">Ungekündigte Abos</h2>
+          <h2 className="text-lg font-bold text-gray-900">Ungekündigte Abos</h2>
           <div className="flex flex-wrap justify-center gap-6">
             <div className="text-center">
               <p className="text-xs font-bold text-orange-600">Gesamtsumme pro Jahr</p>
