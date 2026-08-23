@@ -53,7 +53,9 @@ export function NavBar({
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Link href="/dashboard" className="text-lg font-bold text-gray-900">
+            <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold text-gray-900">
+              {/* eslint-disable-next-line @next/next/no-img-element -- statische App-Icon-Route, keine Optimierung nötig */}
+              <img src="/icon.png" alt="" className="h-6 w-6" />
               Abo-Radar
             </Link>
             <RatingStar percentage={ratingPercentage} hasRated={hasRated} />

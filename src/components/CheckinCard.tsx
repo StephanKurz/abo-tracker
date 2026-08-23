@@ -39,13 +39,7 @@ const STATUS_LABELS: Record<string, string> = {
   failed: "Fehlgeschlagen",
 };
 
-export function CheckinCard({
-  settings,
-  items,
-}: {
-  settings: CheckinSettingsView;
-  items: CheckinItemView[];
-}) {
+export function CheckinCard({ settings }: { settings: CheckinSettingsView }) {
   const router = useRouter();
   const [checkinEmail, setCheckinEmail] = useState(settings?.checkinEmail ?? "");
   const [imapHost, setImapHost] = useState(settings?.imapHost ?? "");
@@ -245,22 +239,26 @@ export function CheckinCard({
           )}
         </p>
       )}
+    </div>
+  );
+}
 
-      {items.length > 0 && (
-        <div className="space-y-2 border-t border-gray-200 pt-3">
-          <h3 className="text-sm font-semibold text-gray-700">Letzte Aktivität</h3>
-          <ul className="space-y-2">
-            {items.map((item) => (
-              <li key={item.id} className="text-sm text-gray-700">
-                <p>{item.subject || "(ohne Betreff)"}</p>
-                <p className="text-xs text-gray-500">
-                  {STATUS_LABELS[item.status] ?? item.status} · {formatDateTime(item.createdAt)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+export function CheckinActivityCard({ items }: { items: CheckinItemView[] }) {
+  if (items.length === 0) return null;
+
+  return (
+    <div className={`${cardClass} space-y-2 p-4 sm:p-5`}>
+      <h2 className="text-lg font-semibold text-gray-900">Letzte Aktivität</h2>
+      <ul className="space-y-2">
+        {items.map((item) => (
+          <li key={item.id} className="text-sm text-gray-700">
+            <p>{item.subject || "(ohne Betreff)"}</p>
+            <p className="text-xs text-gray-500">
+              {STATUS_LABELS[item.status] ?? item.status} · {formatDateTime(item.createdAt)}
+            </p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

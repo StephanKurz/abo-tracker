@@ -59,7 +59,9 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-md space-y-4">
       <div>
-        <h1 className="text-center text-3xl font-bold text-orange-600">Abo-Radar</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element -- statische App-Icon-Route, keine Optimierung nötig */}
+        <img src="/icon.png" alt="" className="mx-auto h-20 w-20" />
+        <h1 className="mt-2 text-center text-3xl font-bold text-orange-600">Abo-Radar</h1>
         <p className="mt-1 text-center text-sm text-gray-600">Dein intelligenter Abo-Wächter</p>
       </div>
       <div className={cardClass}>

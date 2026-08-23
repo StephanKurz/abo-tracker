@@ -4,7 +4,7 @@ import { NotificationSettingsCard } from "@/components/NotificationSettingsCard"
 import { RatingCard } from "@/components/RatingCard";
 import { FeedbackCard } from "@/components/FeedbackCard";
 import { MyInvitesCard } from "@/components/MyInvitesCard";
-import { CheckinCard } from "@/components/CheckinCard";
+import { CheckinCard, CheckinActivityCard } from "@/components/CheckinCard";
 import { CategoriesManager } from "@/components/CategoriesManager";
 import { resolveActiveOverview } from "@/lib/activeOverview";
 import type { InvitePermission } from "@/lib/sharing";
@@ -106,17 +106,29 @@ export default async function AccountPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Einstellungen</h1>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="flex flex-1 flex-col gap-4">
+
+      {/* Vier gleichrangige Boxen, per CSS-Mehrspaltenlayout automatisch auf
+          zwei möglichst gleich lange Spalten balanciert (columns balanciert
+          standardmäßig die Gesamthöhe, statt einfach der Reihe nach zu
+          füllen) - so enden beide Spalten nicht in unterschiedlicher Höhe. */}
+      <div className="columns-1 gap-4 sm:columns-2">
+        <div className="mb-4 break-inside-avoid">
           <NotificationSettingsCard notifyDaysBefore={profile?.notify_days_before ?? null} />
+        </div>
+        <div className="mb-4 break-inside-avoid">
           <RatingCard rating={ownRating?.is_positive ?? null} />
+        </div>
+        <div className="mb-4 break-inside-avoid">
           <FeedbackCard entries={feedbackEntries} />
         </div>
-        <div className="flex flex-1 flex-col gap-4">
-          <CheckinCard settings={checkinSettings} items={checkinItems} />
+        <div className="mb-4 break-inside-avoid">
+          <CheckinCard settings={checkinSettings} />
+        </div>
+        <div className="mb-4 break-inside-avoid">
           <MyInvitesCard invites={incomingInvites} />
         </div>
       </div>
+
       {active && (
         <div className="space-y-2">
           <h2 className="text-lg font-semibold text-gray-900">Kategorien</h2>
@@ -128,6 +140,8 @@ export default async function AccountPage() {
           />
         </div>
       )}
+
+      <CheckinActivityCard items={checkinItems} />
     </div>
   );
 }

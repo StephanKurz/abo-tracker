@@ -74,21 +74,16 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
       const iconSize = 10;
       const titleX = iconDataUrl ? marginX + iconSize + 3 : marginX;
       if (iconDataUrl) {
-        doc.addImage(iconDataUrl, "PNG", marginX, 5, iconSize, iconSize);
+        doc.addImage(iconDataUrl, "PNG", marginX, 12, iconSize, iconSize);
       }
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(234, 88, 12); // orange-600
-      doc.text(`Abo-Radar — ${ownerName}`, titleX, 13);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(107, 114, 128); // gray-500
-      doc.text(`Stand: ${formatDate(new Date())}`, titleX, 19);
+      doc.text(`Abo-Radar — ${ownerName}`, titleX, 20);
 
       function summaryBox(x: number, width: number, title: string, stats: [string, string][]) {
-        const y = 28;
+        const y = 32;
         const height = 26;
         doc.setDrawColor(209, 213, 219); // gray-300
         doc.setFillColor(255, 255, 255);
@@ -97,7 +92,7 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(55, 65, 81); // gray-700
-        doc.text(title, x + 4, y + 7);
+        doc.text(title, x + width / 2, y + 7, { align: "center" });
 
         const colWidth = width / stats.length;
         stats.forEach(([label, value], i) => {
@@ -130,6 +125,9 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
         doc.setFontSize(8);
         doc.setTextColor(107, 114, 128); // gray-500
         doc.text(`Abo-Radar ${APP_VERSION}`, marginX, pageHeight - 8);
+        doc.text(`Stand: ${formatDate(new Date())}`, pageWidth / 2, pageHeight - 8, {
+          align: "center",
+        });
         doc.text(`Seite ${pageNumber}`, pageWidth - marginX, pageHeight - 8, { align: "right" });
       }
 
@@ -137,7 +135,7 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
       const RIGHT_COLUMNS = new Set([4, 5, 6, 7]);
 
       autoTable(doc, {
-        startY: 60,
+        startY: 64,
         margin: { left: marginX, right: marginX, bottom: 16 },
         styles: { fontSize: 8, cellPadding: 2, textColor: [55, 65, 81] },
         headStyles: {
