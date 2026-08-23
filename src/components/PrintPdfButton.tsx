@@ -158,7 +158,13 @@ export function PrintPdfButton({ rows, ownerName }: { rows: DashboardRow[]; owne
       });
 
       const stamp = new Date().toISOString().slice(0, 10);
-      doc.save(`abo-uebersicht-${stamp}.pdf`);
+      const nameSlug = ownerName
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036F]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .toLowerCase();
+      doc.save(`abo-uebersicht-${nameSlug}-${stamp}.pdf`);
     } finally {
       setGenerating(false);
     }
