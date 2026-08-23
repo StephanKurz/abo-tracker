@@ -138,7 +138,7 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
     // Einladung ist bereits gespeichert; E-Mail-Zustellung ist best-effort
   }
 
-  revalidatePath("/account");
+  revalidatePath("/profile");
   return { error: null };
 }
 
@@ -157,7 +157,7 @@ export async function updateCollaboratorPermission(
     .eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/account");
+  revalidatePath("/profile");
   return { error: null };
 }
 
@@ -169,7 +169,7 @@ export async function revokeCollaborator(id: string): Promise<ActionResult> {
     .eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/account");
+  revalidatePath("/profile");
   return { error: null };
 }
 
@@ -188,7 +188,7 @@ export async function deleteCollaboratorRow(id: string): Promise<ActionResult> {
     .eq("status", "revoked");
   if (error) return { error: error.message };
 
-  revalidatePath("/account");
+  revalidatePath("/profile");
   return { error: null };
 }
 

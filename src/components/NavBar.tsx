@@ -59,7 +59,9 @@ export function NavBar({
             <RatingStar percentage={ratingPercentage} hasRated={hasRated} />
           </div>
           <div className="flex items-center gap-3 text-sm text-gray-700 sm:hidden">
-            <span className="truncate">{name}</span>
+            <Link href="/profile" className="truncate hover:text-orange-600 hover:underline">
+              {name}
+            </Link>
             <button
               onClick={handleSignOut}
               className="shrink-0 rounded-md border border-gray-400 px-3 py-1 hover:bg-gray-50"
@@ -107,7 +109,9 @@ export function NavBar({
         </nav>
 
         <div className="hidden shrink-0 items-center gap-3 text-sm text-gray-700 sm:flex">
-          <span>{name}</span>
+          <Link href="/profile" className="hover:text-orange-600 hover:underline">
+            {name}
+          </Link>
           <button
             onClick={handleSignOut}
             className="rounded-md border border-gray-400 px-3 py-1 hover:bg-gray-50"

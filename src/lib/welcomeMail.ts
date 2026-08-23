@@ -95,7 +95,7 @@ export function renderWelcomeMail(input: {
     ${section(
       5,
       "Gemeinsam nutzen",
-      `Über ${link("/account", "„Einstellungen”")} → <strong>Zugriff teilen</strong> lädst du z.B.
+      `Über ${link("/profile", "„Profil”")} → <strong>Zugriff teilen</strong> lädst du z.B.
        deine Familie ein, deine Übersicht mitzunutzen — wahlweise nur lesend, mit Vollzugriff
        oder mit Vollzugriff nur auf selbst angelegte Abos. Personen mit Schreibrechten können
        sogar per E-Mail an dein Check-in-Postfach Abos eintragen.`,
@@ -145,7 +145,7 @@ export function renderWelcomeMail(input: {
     "als Antwort — auch Fragen wie „Ist Netflix schon drin?” werden beantwortet.",
     "",
     "5. Gemeinsam nutzen",
-    "Über „Einstellungen” → Zugriff teilen lädst du andere ein — nur lesend, mit",
+    "Über „Profil” → Zugriff teilen lädst du andere ein — nur lesend, mit",
     "Vollzugriff oder mit Vollzugriff nur auf selbst angelegte Abos.",
     "",
     "6. Deine Meinung zählt",

@@ -79,7 +79,7 @@ export default function SoGehtsPage() {
 
       <Section number={5} title="Gemeinsam nutzen">
         <p className="text-gray-700">
-          Über Einstellungen → Zugriff teilen lädst du z. B. deine Familie ein, deine
+          Über dein Profil (Link hinter deinem Namen oben) → Zugriff teilen lädst du z. B. deine Familie ein, deine
           Übersicht mitzunutzen — wahlweise nur lesend, mit Vollzugriff oder mit Vollzugriff
           nur auf selbst angelegte Abos. Personen mit Schreibrechten können sogar per E-Mail
           an dein Check-in-Postfach Abos eintragen.
