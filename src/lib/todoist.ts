@@ -26,10 +26,27 @@ async function todoistFetch<T>(path: string, token: string, init?: RequestInit):
   return res.json();
 }
 
-/** Holt eine Liste von einem paginierten v1-Endpunkt (auch bare Arrays, falls sich das Format wieder ändert). */
+/**
+ * Holt ALLE Einträge eines paginierten v1-Endpunkts, folgt dazu next_cursor
+ * über so viele Seiten wie nötig (z.B. Unterprojekte können auf einer
+ * späteren Seite liegen als auf der ersten). Toleriert auch ein rohes Array,
+ * falls sich das Antwortformat nochmal ändert.
+ */
 async function todoistList<T>(path: string, token: string): Promise<T[]> {
-  const data = await todoistFetch<T[] | { results: T[] }>(path, token);
-  return Array.isArray(data) ? data : data.results;
+  const results: T[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const separator = path.includes("?") ? "&" : "?";
+    const url: string = cursor ? `${path}${separator}cursor=${encodeURIComponent(cursor)}` : path;
+    type Page = T[] | { results: T[]; next_cursor: string | null };
+    const data: Page = await todoistFetch<Page>(url, token);
+    if (Array.isArray(data)) return [...results, ...data];
+    results.push(...data.results);
+    cursor = data.next_cursor;
+  } while (cursor);
+
+  return results;
 }
 
 /**
