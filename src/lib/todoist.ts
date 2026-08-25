@@ -4,7 +4,11 @@
 // Namens-Lookup nicht ins Gewicht fällt und robuster gegenüber künftigen
 // Umbenennungen ist).
 
-const API = "https://api.todoist.com/rest/v2";
+// Todoist hat die alte REST-API v2 (api.todoist.com/rest/v2) abgeschaltet
+// (HTTP 410 Gone) und durch eine vereinheitlichte API v1 ersetzt. Deren
+// Listen-Endpunkte (z.B. /projects, /sections) liefern nicht mehr direkt ein
+// Array, sondern { results: [...], next_cursor: ... } (Cursor-Pagination).
+const API = "https://api.todoist.com/api/v1";
 const PROJECT_NAME = "Softwareprojekte";
 const SECTION_NAME = "Apps Kurz-Intelligence";
 const LABEL = "Abo-Radar";
@@ -22,6 +26,12 @@ async function todoistFetch<T>(path: string, token: string, init?: RequestInit):
   return res.json();
 }
 
+/** Holt eine Liste von einem paginierten v1-Endpunkt (auch bare Arrays, falls sich das Format wieder ändert). */
+async function todoistList<T>(path: string, token: string): Promise<T[]> {
+  const data = await todoistFetch<T[] | { results: T[] }>(path, token);
+  return Array.isArray(data) ? data : data.results;
+}
+
 /**
  * Legt eine Aufgabe im festen Ziel (Projekt "Softwareprojekte" -> Abschnitt
  * "Apps Kurz-Intelligence", Label "Abo-Radar", fällig heute) an.
@@ -30,11 +40,11 @@ export async function createTodoistTask(content: string, description: string): P
   const token = process.env.TODOIST_API_TOKEN;
   if (!token) throw new Error("TODOIST_API_TOKEN ist nicht gesetzt.");
 
-  const projects = await todoistFetch<{ id: string; name: string }[]>("/projects", token);
+  const projects = await todoistList<{ id: string; name: string }>("/projects", token);
   const project = projects.find((p) => p.name === PROJECT_NAME);
   if (!project) throw new Error(`Todoist-Projekt "${PROJECT_NAME}" nicht gefunden.`);
 
-  const sections = await todoistFetch<{ id: string; name: string }[]>(
+  const sections = await todoistList<{ id: string; name: string }>(
     `/sections?project_id=${project.id}`,
     token,
   );
