@@ -518,13 +518,18 @@ async function processMail(
       ).data
     : null;
 
-  // Idempotenz nur für neue Mails (Antworten haben eigene Message-IDs)
+  // Idempotenz nur für neue Mails (Antworten haben eigene Message-IDs).
+  // Fehlgeschlagene Läufe (status "failed", z.B. wegen eines vorübergehenden
+  // KI-/API-Fehlers) blockieren bewusst NICHT: sonst gilt eine Mail, die nie
+  // erfolgreich verarbeitet wurde, für immer als erledigt und ein erneutes
+  // Senden derselben Mail bliebe wirkungslos.
   if (!openItem && mail.messageId) {
     const { data: dupe } = await admin
       .from("checkin_items")
       .select("id")
       .eq("user_id", sender.userId)
       .eq("message_id", mail.messageId)
+      .neq("status", "failed")
       .maybeSingle();
     if (dupe) return "duplicate";
   }
