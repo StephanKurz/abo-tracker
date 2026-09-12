@@ -29,7 +29,7 @@ export default function ImpressumPage() {
         <p className="text-gray-700">
           Telefon: 0176 / 1623-0777
           <br />
-          E-Mail: <ObfuscatedEmail user="abo" domain="mykurz.de" />
+          E-Mail: <ObfuscatedEmail user="abo" domain="mykurz.ai" />
         </p>
       </section>
 
