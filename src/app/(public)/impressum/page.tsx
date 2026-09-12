@@ -9,7 +9,7 @@ export default function ImpressumPage() {
       <section className="space-y-1">
         <h2 className="text-lg font-semibold text-gray-900">Angaben gemäß § 5 DDG</h2>
         <p className="text-gray-700">
-          Kurz Intelligence™
+          myKurz.AI
           <br />
           Hans-Sachs-Str. 44
           <br />

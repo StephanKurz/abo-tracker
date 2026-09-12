@@ -12,7 +12,7 @@ export function createTransporter() {
   });
 }
 
-const SIGNATURE_TEXT = `\n\nAbo-Radar – Dein intelligenter Abo-Wächter\nEin kostenloser Service von\nKurz Intelligence™`;
+const SIGNATURE_TEXT = `\n\nAbo-Radar – Dein intelligenter Abo-Wächter\nEin kostenloser Service von\nmyKurz.AI`;
 
 // Zentrales HTML-Escaping für alle Stellen, die Nutzer- oder KI-Text in
 // E-Mail-HTML einsetzen. Verhindert, dass z.B. ein Abo-Name mit eingebettetem
@@ -40,7 +40,7 @@ function renderEmailLayout(contentHtml: string): string {
         ${contentHtml}
       </div>
       <div style="padding:16px 24px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.5;">
-        Abo-Radar – Dein intelligenter Abo-Wächter<br>Ein kostenloser Service von<br>Kurz Intelligence™
+        Abo-Radar – Dein intelligenter Abo-Wächter<br>Ein kostenloser Service von<br>myKurz.AI
       </div>
     </div>
   </div>`;
