@@ -10,7 +10,7 @@
 // Array, sondern { results: [...], next_cursor: ... } (Cursor-Pagination).
 const API = "https://api.todoist.com/api/v1";
 const PROJECT_NAME = "Softwareprojekte";
-const SECTION_NAME = "Apps Kurz-Intelligence";
+const SECTION_NAME = "Apps myKurz.AI";
 const LABEL = "Abo-Radar";
 
 async function todoistFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
@@ -51,7 +51,7 @@ async function todoistList<T>(path: string, token: string): Promise<T[]> {
 
 /**
  * Legt eine Aufgabe im festen Ziel (Projekt "Softwareprojekte" -> Abschnitt
- * "Apps Kurz-Intelligence", Label "Abo-Radar", fällig heute) an.
+ * "Apps myKurz.AI", Label "Abo-Radar", fällig heute) an.
  */
 export async function createTodoistTask(content: string, description: string): Promise<void> {
   const token = process.env.TODOIST_API_TOKEN;
