@@ -12,7 +12,7 @@ export function createTransporter() {
   });
 }
 
-const SIGNATURE_TEXT = `\n\nAbo-Radar – Dein intelligenter Abo-Wächter\nEin kostenloser Service von\nmyKurz.AI`;
+const SIGNATURE_TEXT = `\n\nKI Abo-Radar – Nie wieder Verträge vergessen!\nEin kostenloser Service von\nmyKurz.AI – https://www.mykurz.ai`;
 
 // Zentrales HTML-Escaping für alle Stellen, die Nutzer- oder KI-Text in
 // E-Mail-HTML einsetzen. Verhindert, dass z.B. ein Abo-Name mit eingebettetem
@@ -33,14 +33,14 @@ function renderEmailLayout(contentHtml: string): string {
   <div style="margin:0;padding:24px 12px;background-color:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
     <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
       <div style="background-color:#ea580c;padding:16px 24px;">
-        <span style="color:#ffffff;font-size:20px;font-weight:bold;">Abo-Radar</span><br>
+        <span style="color:#ffffff;font-size:20px;font-weight:bold;">KI Abo-Radar</span><br>
         <span style="color:#ffedd5;font-size:12px;">Dein intelligenter Abo-Wächter</span>
       </div>
       <div style="padding:24px;color:#111827;font-size:14px;line-height:1.6;">
         ${contentHtml}
       </div>
       <div style="padding:16px 24px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.5;">
-        Abo-Radar – Dein intelligenter Abo-Wächter<br>Ein kostenloser Service von<br>myKurz.AI
+        KI Abo-Radar – Nie wieder Verträge vergessen!<br>Ein kostenloser Service von<br><a href="https://www.mykurz.ai" style="color:#6b7280;">myKurz.AI</a>
       </div>
     </div>
   </div>`;
@@ -60,7 +60,7 @@ export async function sendMail(opts: {
   const transporter = createTransporter();
   const info = await transporter.sendMail({
     ...opts,
-    from: { name: "Abo-Radar", address: from },
+    from: { name: "KI Abo-Radar", address: from },
     html: renderEmailLayout(opts.html),
     text: opts.text ? opts.text + SIGNATURE_TEXT : undefined,
   });

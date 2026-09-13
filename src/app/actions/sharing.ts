@@ -117,18 +117,18 @@ export async function inviteCollaborator(formData: FormData): Promise<ActionResu
   try {
     await sendMail({
       to: email,
-      subject: `${ownerName} hat dich zu Abo-Radar eingeladen`,
+      subject: `${ownerName} hat dich zum KI Abo-Radar eingeladen`,
       html: `
         <p>Hallo,</p>
-        <p><strong>${escapeHtml(ownerName)}</strong> hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Radar
+        <p><strong>${escapeHtml(ownerName)}</strong> hat dich eingeladen, seine/ihre Abo-Übersicht im KI Abo-Radar
         mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.</p>
         <p>${accountHintHtml}</p>
         ${appUrl ? `<p><a href="${appUrl}${actionPath}">${actionLabel}</a></p>` : ""}
       `,
       text: [
-        `${ownerName} hat dich zu Abo-Radar eingeladen`,
+        `${ownerName} hat dich zum KI Abo-Radar eingeladen`,
         "",
-        `${ownerName} hat dich eingeladen, seine/ihre Abo-Übersicht im Abo-Radar mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.`,
+        `${ownerName} hat dich eingeladen, seine/ihre Abo-Übersicht im KI Abo-Radar mit der Berechtigung „${permissionLabel}” einzusehen${permission !== "read" ? " und zu bearbeiten" : ""}.`,
         "",
         accountHintText,
         ...(appUrl ? ["", `${actionLabel}: ${appUrl}${actionPath}`] : []),

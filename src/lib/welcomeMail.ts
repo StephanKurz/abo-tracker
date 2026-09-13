@@ -42,7 +42,7 @@ export function renderWelcomeMail(input: {
   const html = `
     <p style="font-size:14px;color:#374151;">Hallo ${esc(name)},</p>
     <p style="font-size:14px;color:#374151;line-height:1.6;">
-      willkommen bei <strong>Abo-Radar</strong> — deinem intelligenten Abo-Wächter!
+      willkommen beim <strong>KI Abo-Radar</strong> — deinem intelligenten Abo-Wächter!
       Hier behältst du alle Abonnements, Kosten und Kündigungsfristen im Blick.
       Diese kurze Anleitung zeigt dir alles Wichtige.
     </p>
@@ -71,19 +71,19 @@ export function renderWelcomeMail(input: {
       3,
       "Nie wieder Fristen verpassen",
       `Unter ${link("/account", "„Einstellungen”")} → <strong>Benachrichtigungen</strong> legst du fest,
-       wie viele Tage vor dem nächsten Kündigungstermin dich Abo-Radar per E-Mail erinnert.
+       wie viele Tage vor dem nächsten Kündigungstermin dich das KI Abo-Radar per E-Mail erinnert.
        Mit „Testmail senden” prüfst du sofort, ob alles ankommt.`,
     )}
 
     ${section(
       4,
       "Abos per E-Mail erfassen — der E-Mail-Check-in",
-      `Das Herzstück von Abo-Radar: Richte unter ${link("/account", "„Einstellungen”")} →
+      `Das Herzstück des KI Abo-Radars: Richte unter ${link("/account", "„Einstellungen”")} →
        <strong>E-Mail-Check-in</strong> ein eigenes Postfach ein (IMAP-Zugangsdaten genügen).
        Danach leitest du einfach Bestellbestätigungen oder Rechnungen an dieses Postfach weiter —
        als Text, als PDF-Anhang oder als Foto/Screenshot (JPEG, PNG, GIF, WebP, bis zu 3 Bilder
        pro Mail, je max. 5 MB) — oder schreibst formlos <em>„Netflix, 12,99 € monatlich, ab 01.09.”</em>.
-       Abo-Radar liest die Mail, erkennt die Daten per KI und trägt das Abo automatisch ein.
+       Das KI Abo-Radar liest die Mail, erkennt die Daten per KI und trägt das Abo automatisch ein.
        Fehlt etwas, bekommst du eine Rückfrage per E-Mail — einfach antworten, fertig.
        ${tip(
          `Schick eine Mail mit dem Betreff <strong>„Abo Status”</strong> an dein Check-in-Postfach
@@ -104,20 +104,20 @@ export function renderWelcomeMail(input: {
     ${section(
       6,
       "Deine Meinung zählt",
-      `Bewerte Abo-Radar unter ${link("/account", "„Einstellungen”")} mit einem Klick,
+      `Bewerte das KI Abo-Radar unter ${link("/account", "„Einstellungen”")} mit einem Klick,
        schick uns über <strong>„Mein Feedback”</strong> deine Wünsche — oder empfiehl
-       Abo-Radar weiter, wenn es dir gefällt.`,
+       das KI Abo-Radar weiter, wenn es dir gefällt.`,
     )}
 
     <p style="font-size:14px;color:#374151;line-height:1.6;margin-top:8px;">
-      Viel Freude mit Abo-Radar!<br>
+      Viel Freude mit dem KI Abo-Radar!<br>
       ${appUrl ? `<a href="${appUrl}/dashboard" style="display:inline-block;margin-top:12px;padding:10px 20px;background-color:${ORANGE};color:#ffffff;font-weight:bold;text-decoration:none;border-radius:6px;">Jetzt loslegen</a>` : ""}
     </p>`;
 
   const text = [
     `Hallo ${name},`,
     "",
-    "willkommen bei Abo-Radar — deinem intelligenten Abo-Wächter!",
+    "willkommen beim KI Abo-Radar — deinem intelligenten Abo-Wächter!",
     "Hier behältst du alle Abonnements, Kosten und Kündigungsfristen im Blick.",
     "",
     "1. Übersicht anlegen & erstes Abo erfassen",
@@ -133,13 +133,13 @@ export function renderWelcomeMail(input: {
     "",
     "3. Nie wieder Fristen verpassen",
     "Unter „Einstellungen” → Benachrichtigungen legst du fest, wie viele Tage vor dem",
-    "nächsten Kündigungstermin dich Abo-Radar per E-Mail erinnert.",
+    "nächsten Kündigungstermin dich das KI Abo-Radar per E-Mail erinnert.",
     "",
     "4. Abos per E-Mail erfassen — der E-Mail-Check-in",
     "Richte unter „Einstellungen” → E-Mail-Check-in ein eigenes Postfach ein und leite",
     "Bestellbestätigungen einfach dorthin weiter — als Text, als PDF-Anhang oder als",
     "Foto/Screenshot (JPEG, PNG, GIF, WebP, bis zu 3 Bilder, je max. 5 MB) — oder schreib",
-    "formlos „Netflix, 12,99 € monatlich, ab 01.09.”. Abo-Radar trägt das Abo automatisch",
+    "formlos „Netflix, 12,99 € monatlich, ab 01.09.”. Das KI Abo-Radar trägt das Abo automatisch",
     "ein und fragt per E-Mail nach, wenn etwas fehlt.",
     "Tipp: Eine Mail mit Betreff „Abo Status” liefert dir deine komplette Übersicht",
     "als Antwort — auch Fragen wie „Ist Netflix schon drin?” werden beantwortet.",
@@ -149,11 +149,11 @@ export function renderWelcomeMail(input: {
     "Vollzugriff oder mit Vollzugriff nur auf selbst angelegte Abos.",
     "",
     "6. Deine Meinung zählt",
-    "Bewerte Abo-Radar, schick uns dein Feedback — oder empfiehl es weiter.",
+    "Bewerte das KI Abo-Radar, schick uns dein Feedback — oder empfiehl es weiter.",
     "",
-    "Viel Freude mit Abo-Radar!",
+    "Viel Freude mit dem KI Abo-Radar!",
     ...(appUrl ? ["", `Jetzt loslegen: ${appUrl}/dashboard`] : []),
   ].join("\n");
 
-  return { subject: "Willkommen bei Abo-Radar – so geht's los", html, text };
+  return { subject: "Willkommen beim KI Abo-Radar – so geht's los", html, text };
 }

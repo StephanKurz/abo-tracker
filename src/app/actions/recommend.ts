@@ -30,14 +30,14 @@ export async function sendRecommendation(
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intro = recommenderName
-    ? `${recommenderName} empfiehlt dir Abo-Radar.`
-    : "Jemand empfiehlt dir Abo-Radar.";
-  const pitch = "Mit Abo-Radar behältst du den Überblick über alle deine Abonnements.";
+    ? `${recommenderName} empfiehlt dir das KI Abo-Radar.`
+    : "Jemand empfiehlt dir das KI Abo-Radar.";
+  const pitch = "Mit dem KI Abo-Radar behältst du den Überblick über alle deine Abonnements.";
 
   try {
     await sendMail({
       to: trimmedEmail,
-      subject: "Abo-Radar: Empfehlung",
+      subject: "KI Abo-Radar: Empfehlung",
       html: `
         <p>${escapeHtml(intro)}</p>
         <p>${pitch}</p>
