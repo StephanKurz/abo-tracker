@@ -56,6 +56,7 @@ function VerifyEmailForm() {
     const { error: resendError } = await supabase.auth.resend({
       type: "signup",
       email,
+      options: { emailRedirectTo: `${window.location.origin}/` },
     });
     setResending(false);
     if (resendError) {
