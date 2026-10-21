@@ -20,6 +20,7 @@ export type CheckinSettingsView = {
   imapUser: string;
   hasPassword: boolean;
   enabled: boolean;
+  extraSenders: string[];
   lastPolledAt: string | null;
   lastError: string | null;
 } | null;
@@ -46,6 +47,7 @@ export function CheckinCard({ settings }: { settings: CheckinSettingsView }) {
   const [imapPort, setImapPort] = useState(String(settings?.imapPort ?? 993));
   const [imapUser, setImapUser] = useState(settings?.imapUser ?? "");
   const [imapPassword, setImapPassword] = useState("");
+  const [extraSenders, setExtraSenders] = useState((settings?.extraSenders ?? []).join("\n"));
   const [enabled, setEnabled] = useState(settings?.enabled ?? true);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -63,6 +65,7 @@ export function CheckinCard({ settings }: { settings: CheckinSettingsView }) {
       imapUser,
       imapPassword,
       enabled,
+      extraSenders: extraSenders.split(/[\s,;]+/),
     });
     setBusy(null);
     if (result.error) {
@@ -98,6 +101,7 @@ export function CheckinCard({ settings }: { settings: CheckinSettingsView }) {
       setImapPort("993");
       setImapUser("");
       setImapPassword("");
+      setExtraSenders("");
       setEnabled(true);
       setInfo("Einstellungen gelöscht.");
       router.refresh();
@@ -187,6 +191,18 @@ export function CheckinCard({ settings }: { settings: CheckinSettingsView }) {
               Ein Passwort ist gespeichert. Leer lassen, um es zu behalten.
             </p>
           )}
+        </div>
+
+        <div>
+          <FieldLabel htmlFor="extra_senders">Weitere Absenderadressen</FieldLabel>
+          <textarea
+            id="extra_senders"
+            rows={2}
+            value={extraSenders}
+            onChange={(e) => setExtraSenders(e.target.value)}
+            placeholder="Eine Adresse je Zeile"
+            className={inputClass}
+          />
         </div>
 
         <label className="flex items-center gap-2 text-sm text-gray-700">

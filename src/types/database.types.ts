@@ -38,6 +38,7 @@ export type Database = {
           checkin_email: string
           created_at: string
           enabled: boolean
+          extra_senders: string[]
           imap_host: string
           imap_password_enc: string
           imap_port: number
@@ -51,6 +52,7 @@ export type Database = {
           checkin_email: string
           created_at?: string
           enabled?: boolean
+          extra_senders?: string[]
           imap_host: string
           imap_password_enc: string
           imap_port?: number
@@ -64,6 +66,7 @@ export type Database = {
           checkin_email?: string
           created_at?: string
           enabled?: boolean
+          extra_senders?: string[]
           imap_host?: string
           imap_password_enc?: string
           imap_port?: number

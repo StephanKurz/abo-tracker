@@ -37,6 +37,7 @@ type CheckinSettingsRow = {
   imap_port: number;
   imap_user: string;
   imap_password_enc: string;
+  extra_senders: string[];
 };
 
 /** Von Claude direkt lesbare Bildformate (Vision-Unterstützung der Messages API). */
@@ -63,15 +64,26 @@ class PermissionError extends Error {}
 
 /**
  * Baut die Landkarte der berechtigten Absender für ein Check-in-Postfach:
- * der Besitzer selbst plus alle Mitnutzer mit Schreibrechten auf seine
- * Übersicht. Nur-Lesen-Berechtigte bleiben bewusst außen vor.
+ * der Besitzer selbst (Kontoadresse und seine weiteren Absenderadressen) plus
+ * alle Mitnutzer mit Schreibrechten auf seine Übersicht. Nur-Lesen-Berechtigte
+ * bleiben bewusst außen vor.
  */
 async function buildSenderMap(
   admin: Admin,
   ownerId: string,
   ownerProfile: { email: string; name: string },
+  extraSenders: string[],
 ): Promise<Map<string, Sender>> {
   const senders = new Map<string, Sender>();
+  // Antworten gehen an die Adresse, von der die Mail kam.
+  for (const address of extraSenders) {
+    senders.set(address.toLowerCase(), {
+      userId: ownerId,
+      name: ownerProfile.name,
+      email: address,
+      role: "owner",
+    });
+  }
   senders.set(ownerProfile.email.toLowerCase(), {
     userId: ownerId,
     name: ownerProfile.name,
@@ -794,7 +806,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   const { data: allSettings } = await admin
     .from("checkin_settings")
-    .select("user_id, checkin_email, imap_host, imap_port, imap_user, imap_password_enc")
+    .select("user_id, checkin_email, imap_host, imap_port, imap_user, imap_password_enc, extra_senders")
     .eq("enabled", true);
 
   let processed = 0;
@@ -819,7 +831,12 @@ export async function GET(request: Request) {
         .eq("owner_id", settings.user_id)
         .maybeSingle();
 
-      const senders = await buildSenderMap(admin, settings.user_id, profile);
+      const senders = await buildSenderMap(
+        admin,
+        settings.user_id,
+        profile,
+        settings.extra_senders ?? [],
+      );
       await rescueFromSpam(settings, senders);
       const mails = await fetchInboxMails(settings);
 

@@ -13,6 +13,7 @@ export type CheckinSettingsInput = {
   imapUser: string;
   imapPassword: string; // leer lassen = vorhandenes Passwort behalten
   enabled: boolean;
+  extraSenders: string[];
 };
 
 export async function saveCheckinSettings(
@@ -35,6 +36,13 @@ export async function saveCheckinSettings(
   if (!Number.isFinite(imapPort) || imapPort < 1 || imapPort > 65535) {
     return { error: "IMAP-Port ist ungültig." };
   }
+
+  const extraSenders = Array.from(
+    new Set(input.extraSenders.map((s) => s.trim().toLowerCase()).filter(Boolean)),
+  );
+  const invalidSender = extraSenders.find((s) => !isEmail(s));
+  if (invalidSender) return { error: `Ungültige Absenderadresse: ${invalidSender}` };
+  if (extraSenders.length > 10) return { error: "Höchstens 10 weitere Absenderadressen." };
 
   const { data: existing } = await supabase
     .from("checkin_settings")
@@ -59,6 +67,7 @@ export async function saveCheckinSettings(
     imap_user: imapUser,
     imap_password_enc: passwordEnc,
     enabled: input.enabled,
+    extra_senders: extraSenders,
     updated_at: new Date().toISOString(),
   });
   if (error) return { error: error.message };

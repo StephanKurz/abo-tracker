@@ -38,7 +38,7 @@ export default async function AccountPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("checkin_settings")
-      .select("checkin_email, imap_host, imap_port, imap_user, enabled, last_polled_at, last_error")
+      .select("checkin_email, imap_host, imap_port, imap_user, enabled, extra_senders, last_polled_at, last_error")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -66,6 +66,7 @@ export default async function AccountPage() {
         imapUser: checkinSettingsRaw.imap_user,
         hasPassword: true,
         enabled: checkinSettingsRaw.enabled,
+        extraSenders: checkinSettingsRaw.extra_senders,
         lastPolledAt: checkinSettingsRaw.last_polled_at,
         lastError: checkinSettingsRaw.last_error,
       }
