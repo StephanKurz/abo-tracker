@@ -113,7 +113,7 @@ Kündigungsmodus und Kündigungsfrist recherchieren:
 - Gibt es nichts zu recherchieren und keine Abweichung: researched_fields leer lassen und
   knowledge_note auf null setzen.
 
-Antworte AUSSCHLIESSLICH mit einem JSON-Objekt exakt dieser Form, ohne Markdown:
+Gib das Ergebnis AUSSCHLIESSLICH über das Werkzeug "abo_auswertung" zurück, in exakt dieser Form:
 {"action":"create|update|unclear|reject|status","subscription_id":"...oder null","fields":{...},"category":"...oder null","questions":["..."],"summary":"...","researched_fields":["cancellation_mode","notice_period","start_date"],"knowledge_note":"...oder null"}`;
 
 const SUPPORTED_IMAGE_MEDIA_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
@@ -180,29 +180,47 @@ export async function extractSubscriptionFromEmail(input: {
     });
   }
 
+  // Antwort über ein erzwungenes Werkzeug statt als freier JSON-Text: Die API
+  // liefert die Eingabe bereits als geparstes Objekt. Freier Text scheiterte
+  // gelegentlich an deutschen Anführungszeichen („…" mit geradem Schlusszeichen).
   const response = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
+    tools: [EXTRACTION_TOOL],
+    tool_choice: { type: "tool", name: EXTRACTION_TOOL.name },
     messages: [{ role: "user", content }],
   });
 
-  const raw = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("")
-    .trim();
+  const toolUse = response.content.find(
+    (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === EXTRACTION_TOOL.name,
+  );
+  if (!toolUse) throw new Error("KI-Antwort enthält keine Abo-Auswertung.");
 
-  return validateExtraction(parseJson(raw), input.existingSubscriptions);
+  return validateExtraction(toolUse.input, input.existingSubscriptions);
 }
 
-function parseJson(raw: string): unknown {
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("KI-Antwort enthält kein JSON.");
-  return JSON.parse(cleaned.slice(start, end + 1));
-}
+const EXTRACTION_TOOL: Anthropic.Tool = {
+  name: "abo_auswertung",
+  description: "Gibt die Auswertung der Check-in-Mail zurück.",
+  input_schema: {
+    type: "object",
+    properties: {
+      action: { type: "string", enum: ["create", "update", "unclear", "reject", "status"] },
+      subscription_id: { type: ["string", "null"] },
+      fields: { type: "object" },
+      category: { type: ["string", "null"] },
+      questions: { type: "array", items: { type: "string" } },
+      summary: { type: "string" },
+      researched_fields: {
+        type: "array",
+        items: { type: "string", enum: ["cancellation_mode", "notice_period", "start_date"] },
+      },
+      knowledge_note: { type: ["string", "null"] },
+    },
+    required: ["action", "subscription_id", "fields", "category", "questions", "summary", "researched_fields", "knowledge_note"],
+  },
+};
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
